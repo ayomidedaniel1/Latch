@@ -1,36 +1,111 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Latch — Real-time Webhook Ledger & Replay Engine
+
+**Latch** is a developer-focused, real-time webhook ledger and replay utility. By swapping a third-party service's endpoint URL (e.g. Stripe, GitHub, Shopify) to point at Latch, developers can capture incoming events permanently, inspect payload states live, verify cryptographic signatures, and replay transactions with a single click — keeping the original headers and body structure completely intact.
+
+---
+
+## Key Features
+
+- **High-Speed Async Ingestion**: Webhook routes accept payloads, queue them in Redis, and respond with `200 OK` under 50ms to prevent provider timeout retries.
+- **Header & Body Preservation**: Raw incoming headers are stored as `JSONB`, while payloads are saved as both raw `text` (for signature verification) and parsed `JSONB` (for dashboard inspectability).
+- **Real-Time Live Feed**: Webhooks stream directly to the dashboard page using a Server-Sent Events (SSE) stream over Vercel Edge Runtime.
+- **Single-Click Replay**: Re-dispatch captured webhooks with original headers and payloads, appending `X-Webhook-Replay: true` for downstream tracking.
+- **Developer Auth**: Scoped environment querying utilizing Auth.js v5 (NextAuth) integrated with GitHub OAuth login.
+
+---
+
+## Locked Tech Stack
+
+| Layer | Technology | Purpose |
+| :--- | :--- | :--- |
+| **Framework** | Next.js 15 (App Router, TypeScript) | Full-stack architecture, API routes |
+| **Database** | Neon Postgres (`@neondatabase/serverless`) | Fast serverless PostgreSQL |
+| **Queue** | Upstash Redis (`@upstash/redis`) | Async stateless buffer queue |
+| **Queue Trigger**| Upstash QStash (`@upstash/qstash`) | Serverless consumer trigger callbacks |
+| **Auth** | Auth.js v5 + Neon Adapter | Developer logins and project isolation |
+| **Styling** | Tailwind CSS | Sleek, modern developer dashboards |
+| **ORM** | Raw SQL Queries | Speed, simplicity, and query execution efficiency |
+
+---
 
 ## Getting Started
 
-First, run the development server:
-
+### 1. Requirements & Dependencies
+First, ensure you have dependencies installed:
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+pnpm install
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+### 2. Configure Environment Variables
+Create a `.env.local` file in the root directory and add your database and Redis credentials:
+```env
+# Neon Postgres Connection Strings
+DATABASE_URL=postgres://...neon.tech/neondb?sslmode=require
+DATABASE_URL_UNPOOLED=postgres://...neon.tech/neondb?sslmode=require
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+# Upstash Redis
+UPSTASH_REDIS_REST_URL=https://...upstash.io
+UPSTASH_REDIS_REST_TOKEN=...
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+# Upstash QStash
+QSTASH_TOKEN=...
+QSTASH_CURRENT_SIGNING_KEY=sig_...
+QSTASH_NEXT_SIGNING_KEY=sig_...
 
-## Learn More
+# App Config
+NEXT_PUBLIC_APP_URL=http://localhost:3000
 
-To learn more about Next.js, take a look at the following resources:
+# Auth.js (GitHub provider)
+AUTH_SECRET=
+AUTH_GITHUB_ID=
+AUTH_GITHUB_SECRET=
+```
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+### 3. Run Database Migrations
+Deploy the tables (`projects`, `events`, `replays`) and indexes onto your Neon database using the unpooled direct connection string:
+```bash
+pnpm dlx tsx --env-file=.env.local scripts/migrate.ts
+```
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+### 4. Run the Development Server
+Start the Next.js local server:
+```bash
+pnpm dev
+```
+Open [http://localhost:3000](http://localhost:3000) to inspect the application.
 
-## Deploy on Vercel
+### 5. Validate Connections
+Verify that your database and cache services are connected properly by making a request to the health-check route:
+```bash
+curl http://localhost:3000/api/health
+```
+A successful connection should return status `200 OK` with:
+```json
+{
+  "neon": "ok",
+  "redis": "ok"
+}
+```
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+---
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+## Project Structure & Architecture
+
+```
+├── app/
+│   ├── api/
+│   │   ├── health/route.ts       # GET — Neon + Redis live health status
+│   │   ├── ingest/[projectId]/   # POST — Receives webhooks & enqueues to Redis
+│   │   ├── process/route.ts      # POST — Queue consumer (triggered by QStash)
+│   │   ├── events/stream/        # GET — Real-time event stream (SSE Edge route)
+│   │   └── replay/route.ts       # POST — Forwards captured events to destinations
+│   └── dashboard/                # Project views & live event logs
+├── components/                   # Real-time event feeds and JSON tree viewers
+├── lib/
+│   ├── db.ts                     # Neon serverless client setup
+│   ├── redis.ts                  # Upstash Redis client setup
+│   ├── verify.ts                 # Crypto signature verification (Stripe / GitHub)
+│   └── schema.sql                # SQL database table and index structures
+└── scripts/
+    └── migrate.ts                # DDL database schema runner
+```
