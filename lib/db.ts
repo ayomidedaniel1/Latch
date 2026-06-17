@@ -1,9 +1,6 @@
 import { neon, neonConfig } from '@neondatabase/serverless';
+import { env } from '@/lib/env';
 
 neonConfig.fetchConnectionCache = true;
 
-if (!process.env.DATABASE_URL) {
-  throw new Error('DATABASE_URL is not set');
-}
-
-export const db = neon(process.env.DATABASE_URL);
+export const db = neon(env.databaseUrl);

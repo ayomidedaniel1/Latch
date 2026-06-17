@@ -1,6 +1,7 @@
 import { db } from '@/lib/db';
 import { redis } from '@/lib/redis';
 import { verifySignatureAppRouter } from '@upstash/qstash/nextjs';
+import { env } from '@/lib/env';
 
 interface WebhookPayload {
   projectId: string;
@@ -10,9 +11,8 @@ interface WebhookPayload {
   sourceIp: string | null;
 }
 
-// Core processing logic — extracted so it can be called directly in dev
+// Core processing logic extracted so it can be called directly in dev
 async function processNextItem(): Promise<Response> {
-  // Pop one item from the right of the list (FIFO with LPUSH)
   const item = await redis.rpop<WebhookPayload | string>('webhook-queue');
 
   if (!item) {
@@ -24,7 +24,6 @@ async function processNextItem(): Promise<Response> {
   const payload: WebhookPayload = typeof item === 'string' ? JSON.parse(item) : item;
   const { projectId, headers, raw, receivedAt, sourceIp } = payload;
 
-  // Verify the project exists
   const projectRows = await db`
     SELECT id FROM projects WHERE id = ${projectId} LIMIT 1
   `;
@@ -72,10 +71,9 @@ const productionHandler = verifySignatureAppRouter(
   async () => processNextItem()
 );
 
-// Export the correct handler depending on environment
 export async function POST(req: Request) {
-  if (process.env.NODE_ENV === 'development') {
-    // Skip signature verification in dev — QStash cannot reach localhost
+  if (env.isDev) {
+    // Skip signature verification in dev
     return processNextItem();
   }
   return productionHandler(req);
