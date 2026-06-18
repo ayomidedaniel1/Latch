@@ -21,7 +21,7 @@ const FEATURES = [
     title: 'Structured JSONB Search',
     description:
       'Query transaction logs by values nested deep inside headers or payloads. Search for email targets, IDs, or error codes without scanning the whole database.',
-    status: 'coming-soon' as const,
+    status: 'live' as const,
   },
   {
     title: 'Latch CLI Proxy Tunnel',

@@ -114,8 +114,8 @@ panel switches to a DiffViewer showing color-coded additions (green), removals (
 changes (amber with arrow notation), and unchanged values. Includes a summary bar
 with counts, and a toggle to diff either payloads or headers.
 
-### 8. Payload Search & Filtering (Day 7)
-Leverage Neon's fast `JSONB` indexing to add a query search bar to find specific metadata (e.g., `customer.email` or `checkout_id`) across all historical events in the database.
+### 8. Payload Search & Filtering (Day 7 - COMPLETE)
+Query search bar powered by a server-side search API and a Postgres GIN index on the JSONB payload column. Allows full-text search across raw bodies, headers, and parsed payload values, as well as exact key-path checks using Postgres SQL/JSON path queries (`jsonb_path_exists`), all with client-side debouncing and live stream preservation.
 
 ### 9. Latch CLI / The "ngrok killer" (Day 8)
 Create a lightweight CLI (`npx latch-cli listen <projectId> --forward-to <localUrl>`) that subscribes to the Latch SSE stream and forwards webhooks locally to a developer's machine, eliminating the need for tunnel configuration.

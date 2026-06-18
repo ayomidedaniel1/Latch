@@ -33,6 +33,9 @@ CREATE INDEX IF NOT EXISTS idx_events_project_received
 CREATE INDEX IF NOT EXISTS idx_events_received
   ON events(received_at DESC);
 
+CREATE INDEX IF NOT EXISTS idx_events_body_gin
+  ON events USING gin(body);
+
 CREATE TABLE IF NOT EXISTS users (
   id TEXT PRIMARY KEY DEFAULT gen_random_uuid()::text,
   name VARCHAR(255),

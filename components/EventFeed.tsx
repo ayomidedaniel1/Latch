@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import { EventViewer } from './EventViewer';
 import { DiffViewer } from './DiffViewer';
+import { SearchBar } from './SearchBar';
 import type { WebhookEvent } from '@/lib/types';
 
 export function EventFeed({
@@ -13,6 +14,7 @@ export function EventFeed({
   destinationUrl?: string;
 }) {
   const [events, setEvents] = useState<WebhookEvent[]>([]);
+  const [searchResults, setSearchResults] = useState<WebhookEvent[] | null>(null);
   const [connected, setConnected] = useState(false);
   const [selectedId, setSelectedId] = useState<string | null>(null);
 
@@ -41,11 +43,12 @@ export function EventFeed({
     return () => es.close();
   }, [projectId]);
 
-  const selected = events.find((e) => e.id === selectedId) ?? events[0] ?? null;
+  const displayedEvents = searchResults !== null ? searchResults : events;
+  const selected = displayedEvents.find((e) => e.id === selectedId) ?? displayedEvents[0] ?? null;
 
   // Compare mode helpers
-  const eventA = compareIds[0] ? events.find((e) => e.id === compareIds[0]) ?? null : null;
-  const eventB = compareIds[1] ? events.find((e) => e.id === compareIds[1]) ?? null : null;
+  const eventA = compareIds[0] ? displayedEvents.find((e) => e.id === compareIds[0]) ?? null : null;
+  const eventB = compareIds[1] ? displayedEvents.find((e) => e.id === compareIds[1]) ?? null : null;
   const bothSelected = eventA !== null && eventB !== null;
 
   function handleCompareClick(eventId: string) {
@@ -84,10 +87,19 @@ export function EventFeed({
         {/* Toolbar */}
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center gap-2 text-sm text-zinc-400">
-            <StatusIndicator connected={connected} />
-            {connected ? 'Live' : 'Reconnecting\u2026'}
+            {searchResults !== null ? (
+              <div className="flex items-center gap-1.5 font-mono text-[10px] text-blue-400 uppercase tracking-wider bg-blue-500/10 border border-blue-500/20 px-2 py-0.5 rounded">
+                <span className="h-1.5 w-1.5 rounded-full bg-blue-400" />
+                Search Results
+              </div>
+            ) : (
+              <>
+                <StatusIndicator connected={connected} />
+                {connected ? 'Live' : 'Reconnecting\u2026'}
+              </>
+            )}
           </div>
-          {events.length >= 2 && (
+          {displayedEvents.length >= 2 && (
             <button
               onClick={toggleCompareMode}
               className={`text-[11px] font-mono px-2.5 py-1 rounded-md border transition-colors cursor-pointer ${
@@ -101,6 +113,13 @@ export function EventFeed({
           )}
         </div>
 
+        {/* Search Bar */}
+        <SearchBar
+          projectId={projectId}
+          onResults={(results) => setSearchResults(results)}
+          onClear={() => setSearchResults(null)}
+        />
+
         {/* Compare mode hint */}
         {compareMode && !bothSelected && (
           <div className="mb-3 text-[10px] text-zinc-500 font-mono bg-zinc-900/50 border border-zinc-800 rounded-md px-3 py-2">
@@ -109,14 +128,15 @@ export function EventFeed({
         )}
 
         {/* Event List */}
-        {events.length === 0 ? (
+        {displayedEvents.length === 0 ? (
           <p className="text-sm text-zinc-500 leading-relaxed">
-            No webhooks yet. Point a service at the URL above and they&apos;ll show
-            up here in real time.
+            {searchResults !== null
+              ? 'No matching webhooks found for this search query.'
+              : 'No webhooks yet. Point a service at the URL above and they\'ll show up here in real time.'}
           </p>
         ) : (
           <ul className="space-y-1.5">
-            {events.map((event) => {
+            {displayedEvents.map((event) => {
               const badge = compareMode ? getCompareBadge(event.id) : null;
               const isSelected = !compareMode && selected?.id === event.id;
 
@@ -144,7 +164,7 @@ export function EventFeed({
                       </div>
                       {badge && <CompareBadge label={badge} />}
                     </div>
-                    <div className="truncate">
+                    <div className="truncate font-mono text-xs">
                       {event.headers['content-type'] ?? 'unknown content-type'}
                     </div>
                   </button>
