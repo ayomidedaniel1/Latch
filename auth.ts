@@ -14,6 +14,9 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       clientSecret: env.authGithubSecret,
     }),
   ],
+  pages: {
+    signIn: '/signin',
+  },
   callbacks: {
     session({ session, user }) {
       if (session.user && user?.id) {

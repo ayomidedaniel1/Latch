@@ -15,7 +15,7 @@ const FEATURES = [
     title: 'Side-by-Side Payload Diffing',
     description:
       'Select any two events to compare payload schemas side-by-side with visual Git-style additions and deletions. Instantly spot breaking changes from webhook updates.',
-    status: 'coming-soon' as const,
+    status: 'live' as const,
   },
   {
     title: 'Structured JSONB Search',
@@ -44,7 +44,7 @@ export default async function Home() {
         <section className="space-y-6 max-w-3xl">
           <h1 className="text-4xl md:text-6xl font-bold tracking-tight text-white leading-[1.1]">
             Capture, Inspect, and Replay{' '}
-            <span className="text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 to-teal-500">
+            <span className="text-transparent bg-clip-text bg-linear-to-r from-emerald-400 to-teal-500">
               Webhooks Instantly
             </span>
           </h1>
@@ -61,7 +61,7 @@ export default async function Home() {
               </Link>
             ) : (
               <Link
-                href="/api/auth/signin?callbackUrl=/dashboard"
+                href="/signin?callbackUrl=/dashboard"
                 className="inline-flex items-center gap-2 rounded-lg bg-emerald-500 text-zinc-950 hover:bg-emerald-400 px-6 py-3 font-medium transition-all shadow-lg shadow-emerald-500/10 cursor-pointer"
               >
                 Get Started with GitHub

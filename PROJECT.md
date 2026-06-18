@@ -107,8 +107,12 @@ red for null), copy-path-to-clipboard on key hover (e.g. `data.object.amount`), 
 on value hover, array index display, and item count previews on collapsed nodes.
 Also unified the dashboard under the same dark mode theme as the landing page.
 
-### 7. Side-by-Side Payload Diffing (Day 6)
-Allow developers to select any two events in the sidebar and render a visual Git-style diff of the JSON bodies, making it easy to identify when third-party provider API payload schemas change.
+### 7. Side-by-Side Payload Diffing (Day 6 - COMPLETE)
+Custom-built structural JSON diff engine with a compare mode toggle in the event
+sidebar. Select any two events (tagged A/B with blue/purple badges), and the right
+panel switches to a DiffViewer showing color-coded additions (green), removals (red),
+changes (amber with arrow notation), and unchanged values. Includes a summary bar
+with counts, and a toggle to diff either payloads or headers.
 
 ### 8. Payload Search & Filtering (Day 7)
 Leverage Neon's fast `JSONB` indexing to add a query search bar to find specific metadata (e.g., `customer.email` or `checkout_id`) across all historical events in the database.

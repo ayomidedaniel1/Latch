@@ -5,7 +5,7 @@ export default auth((req) => {
   if (!req.auth) {
     const callbackUrl = encodeURIComponent(req.nextUrl.pathname + req.nextUrl.search);
     return NextResponse.redirect(
-      new URL(`/api/auth/signin?callbackUrl=${callbackUrl}`, req.url)
+      new URL(`/signin?callbackUrl=${callbackUrl}`, req.url)
     );
   }
 });

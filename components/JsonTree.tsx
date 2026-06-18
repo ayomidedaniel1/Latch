@@ -179,7 +179,7 @@ function KeyLabel({
 
 /* -- Value Label with Copy-Value ------------------------- */
 
-function ValueLabel({ value }: { value: unknown }) {
+function ValueLabel({ value }: { value: unknown; }) {
   const [copied, setCopied] = useState(false);
 
   const handleCopyValue = useCallback(async () => {
