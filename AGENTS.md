@@ -1,14 +1,14 @@
-# [APP_NAME] — Agent Team
+# [APP_NAME] | Agent Team
 
 ## What We're Building
 
 A real-time webhook ledger and replay engine. Developers swap one URL to point any third-party
 service (Stripe, GitHub, Shopify) at [APP_NAME]. Every webhook is captured permanently, visible
-live on a dashboard, and replayable with one click — original headers and payload intact.
+live on a dashboard, and replayable with one click, original headers and payload intact.
 
 ---
 
-## Locked Stack — No Debates
+## Locked Stack: No Debates
 
 | Layer | Choice | Why |
 |---|---|---|
@@ -16,9 +16,9 @@ live on a dashboard, and replayable with one click — original headers and payl
 | Database | Neon Postgres | Serverless Postgres, generous free tier |
 | Auth | Auth.js v5 (NextAuth) | Self-hosted, no MAU limits, GitHub OAuth |
 | Queue | Upstash Redis | Fast async ingestion buffer, free tier |
-| Real-time | SSE — Server-Sent Events | One-directional, no WebSocket infra needed |
+| Real-time | SSE: Server-Sent Events | One-directional, no WebSocket infra needed |
 | Deployment | Vercel | Free hobby tier, native Next.js support |
-| ORM | None — raw SQL via `@neondatabase/serverless` | Fewer abstractions, faster to build |
+| ORM | None: raw SQL via `@neondatabase/serverless` | Fewer abstractions, faster to build |
 
 ---
 
@@ -29,8 +29,8 @@ These rules exist because they caused real architectural pain. Never debate them
 - **Return 200 OK before doing anything.** The ingest route pushes to Redis and returns immediately.
   Processing happens in a separate consumer. Never process synchronously in the ingest route.
 - **SSE endpoints use Edge Runtime.** Export `export const runtime = 'edge'` in every SSE route.
-  Vercel free tier gives 30s on Edge; the EventSource API auto-reconnects — this is fine.
-- **No WebSockets.** Data flows one way (server → client). SSE is the right tool.
+  Vercel free tier gives 30s on Edge; the EventSource API auto-reconnects; this is fine.
+- **No WebSockets.** Data flows one way (server -> client). SSE is the right tool.
 - **Never drop headers.** Store raw webhook headers as JSONB. Providers embed signatures,
   event types, and idempotency keys in headers. All of it matters.
 - **Store raw body AND parsed body.** `raw_body TEXT` for signature verification,
@@ -61,7 +61,7 @@ goes to the queue consumer.
 **Owns:** `app/dashboard/`, `components/`, `app/api/events/stream/`
 
 Core responsibilities:
-- Event feed: SSE client using `new EventSource('/api/events/stream')` — never fetch polling
+- Event feed: SSE client using `new EventSource('/api/events/stream')` - never fetch polling
 - Handle `Last-Event-ID` on reconnect so no events are missed during the 30s edge timeout cycle
 - JSON payload viewer with syntax highlighting and collapsible nodes
 - Diff viewer between any two selected events (key insight: payload schema changes over time)
@@ -75,10 +75,10 @@ Core responsibilities:
 **Owns:** `auth.ts`, `middleware.ts`, Auth.js config
 
 Core responsibilities:
-- GitHub OAuth only — no email/password, no magic links (developer tool, everyone has GitHub)
+- GitHub OAuth only: no email/password, no magic links (developer tool, everyone has GitHub)
 - Auth.js v5 with Neon adapter (`@auth/pg-adapter`)
 - Middleware protects all `/dashboard/**` routes
-- `user_id` from session scopes every database query — never expose other users' projects or events
+- `user_id` from session scopes every database query; never expose other users' projects or events
 
 ---
 
@@ -94,7 +94,7 @@ UPSTASH_REDIS_REST_TOKEN=
 AUTH_SECRET=                # openssl rand -base64 32
 AUTH_GITHUB_ID=
 AUTH_GITHUB_SECRET=
-QSTASH_TOKEN=               # Upstash QStash — triggers queue consumer
+QSTASH_TOKEN=               # Upstash QStash: triggers queue consumer
 QSTASH_CURRENT_SIGNING_KEY=
 QSTASH_NEXT_SIGNING_KEY=
 ```
@@ -108,14 +108,14 @@ QSTASH_NEXT_SIGNING_KEY=
 ├── app/
 │   ├── api/
 │   │   ├── ingest/[projectId]/
-│   │   │   └── route.ts          # POST — webhook receiver
+│   │   │   └── route.ts          # POST - webhook receiver
 │   │   ├── process/
-│   │   │   └── route.ts          # POST — queue consumer (called by QStash)
+│   │   │   └── route.ts          # POST - queue consumer (called by QStash)
 │   │   ├── events/
 │   │   │   └── stream/
-│   │   │       └── route.ts      # GET — SSE stream (Edge Runtime)
+│   │   │       └── route.ts      # GET - SSE stream (Edge Runtime)
 │   │   └── replay/
-│   │       └── route.ts          # POST — replay engine
+│   │       └── route.ts          # POST - replay engine
 │   ├── dashboard/
 │   │   ├── page.tsx              # Project list
 │   │   └── [projectId]/
@@ -123,7 +123,7 @@ QSTASH_NEXT_SIGNING_KEY=
 │   └── api/auth/[...nextauth]/
 │       └── route.ts
 ├── components/
-│   ├── EventFeed.tsx             # 'use client' — SSE subscriber
+│   ├── EventFeed.tsx             # 'use client' - SSE subscriber
 │   ├── EventViewer.tsx           # JSON payload viewer
 │   ├── DiffViewer.tsx            # Side-by-side payload diff
 │   └── ReplayButton.tsx          # Replay trigger + response display
@@ -177,7 +177,7 @@ CREATE INDEX ON events (received_at DESC);
 
 ---
 
-## Key Patterns — Quick Reference
+## Key Patterns: Quick Reference
 
 **Ingest route (always this shape):**
 ```typescript

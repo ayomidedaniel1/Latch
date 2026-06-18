@@ -13,6 +13,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
+  metadataBase: new URL("https://latch-wheat.vercel.app"),
   title: "Latch | Capture, Inspect, and Replay Webhooks Instantly",
   description:
     "A developer-first, permanent webhook ledger. Connect Stripe, GitHub, Shopify, or any service in seconds. No tunnels, no lost events, infinite one-click replays.",

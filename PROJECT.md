@@ -1,4 +1,4 @@
-# Latch — Project Brief
+# Latch | Project Brief
 
 Read this file at the start of every session. It defines what we are building,
 why it exists, and every decision already made. Do not re-open these questions.
@@ -8,13 +8,13 @@ why it exists, and every decision already made. Do not re-open these questions.
 ## What Latch is
 
 Latch is a real-time webhook ledger and replay engine. Developers point any
-third-party service — Stripe, GitHub, Shopify, Twilio — at a Latch endpoint
+third-party service (Stripe, GitHub, Shopify, Twilio) at a Latch endpoint
 instead of directly at their application. Every webhook that arrives is captured
 permanently, shown live on a dashboard, and replayable with one click to any
 destination, with the original headers and payload preserved exactly.
 
 One-line pitch: **every webhook your app ever receives, visible, searchable,
-and replayable — for free.**
+and replayable, for free.**
 
 ---
 
@@ -22,7 +22,7 @@ and replayable — for free.**
 
 When a Stripe payment succeeds, a GitHub commit lands, or a Shopify order ships,
 a webhook fires a POST request at your server. If your server is down, slow,
-or returning errors at that moment — the event is gone forever. The payment is
+or returning errors at that moment, the event is gone forever. The payment is
 marked successful at Stripe but your database was never told. The order shipped
 but your fulfilment system missed it. There is no retry mechanism, no record of
 what arrived, and no way to recover without going back to the provider and hoping
@@ -41,14 +41,14 @@ discovers the broken state before the developer does.
 ## Who this is built for
 
 **Primary:** Solo founders and developers building payment or sync integrations.
-People using Stripe, GitHub webhooks, or Shopify — the most common sources of
+People using Stripe, GitHub webhooks, or Shopify, the most common sources of
 "why is my user's account broken?" incidents.
 
-**Secondary:** Small engineering teams (2–6 developers) who need shared visibility
+**Secondary:** Small engineering teams (2 to 6 developers) who need shared visibility
 into what webhooks their production systems are receiving.
 
 **Tertiary:** Developers building in public who want real infrastructure stories
-to share — this project is itself built in public using the same philosophy.
+to share; this project is itself built in public using the same philosophy.
 
 ---
 
@@ -56,13 +56,13 @@ to share — this project is itself built in public using the same philosophy.
 
 | Tool | The gap |
 |---|---|
-| webhook.site | Ephemeral inspection bins — events expire, no replay, no production use |
+| webhook.site | Ephemeral inspection bins: events expire, no replay, no production use |
 | ngrok | Solves local tunnelling only, not a production ledger, no replay |
-| Hookdeck | Closest competitor — but $75/month, complex routing config, built for large teams |
-| EventDock | Fast delivery acknowledgment — but no inspection, diff, or replay |
+| Hookdeck | Closest competitor: but $75/month, complex routing config, built for large teams |
+| EventDock | Fast delivery acknowledgment: but no inspection, diff, or replay |
 | RequestBin | Ephemeral, shut down original, now folded into Pipedream |
 
-Most teams currently use two or three tools across different stages — ngrok for
+Most teams currently use two or three tools across different stages: ngrok for
 local dev, webhook.site for quick inspection, and Hookdeck for production.
 Latch replaces all three with one URL and one dashboard.
 
@@ -70,36 +70,36 @@ Latch replaces all three with one URL and one dashboard.
 
 ## Core features (in build order)
 
-### 1. Webhook ingestion (Day 1 — COMPLETE)
+### 1. Webhook ingestion (Day 1: COMPLETE)
 A public endpoint at `/api/ingest/[projectId]` accepts POST requests from any
 provider. It returns 200 OK in under 50ms regardless of payload size. The payload
 is buffered to Redis and processed asynchronously so no webhook is ever held up
 by a slow database write.
 
-### 2. Live dashboard (Day 2 — COMPLETE)
+### 2. Live dashboard (Day 2: COMPLETE)
 A real-time event feed built on Server-Sent Events. The browser opens an
 EventSource connection to `/api/events/stream`. As webhooks land, they stream
 to the dashboard in real time without page refresh. Each event shows the source,
 timestamp, HTTP method, and a JSON viewer for the full payload.
 
-### 3. Replay engine (Day 3 — COMPLETE)
+### 3. Replay engine (Day 3: COMPLETE)
 One-click replay of any stored event. The original headers and raw body are
 forwarded to any configurable destination URL with an extra
-`X-Webhook-Replay: true` header added. The response — status code, body,
-and latency — is stored in the `replays` table and shown inline.
+`X-Webhook-Replay: true` header added. The response (status code, body,
+and latency) is stored in the `replays` table and shown inline.
 
-### 4. Authentication (Day 3 — COMPLETE)
-GitHub OAuth via Auth.js v5. This is a developer tool — everyone in the target
+### 4. Authentication (Day 3: COMPLETE)
+GitHub OAuth via Auth.js v5. This is a developer tool: everyone in the target
 audience has a GitHub account, so there is no password or email flow.
 Sessions are stored in Neon using the pg adapter.
 
-### 5. Landing Page (Day 4 — COMPLETE)
+### 5. Landing Page (Day 4: COMPLETE)
 A high-converting homepage (at `/`) introducing Latch. Includes value-proposition
 highlights, a responsive visual mockup demonstrating real-time webhook flow,
 and clean call-to-action buttons redirecting authenticated users directly to their
 `/dashboard` or offering the GitHub login redirect.
 
-### 6. Interactive JSON Tree Viewer (Day 5 — COMPLETE)
+### 6. Interactive JSON Tree Viewer (Day 5: COMPLETE)
 Custom-built interactive collapsible JSON tree viewer replacing raw `JSON.stringify` dumps
 across the entire dashboard. Features include: collapsible/expandable nodes with chevron
 toggles, syntax highlighting (emerald for strings, amber for numbers, purple for booleans,
@@ -107,14 +107,14 @@ red for null), copy-path-to-clipboard on key hover (e.g. `data.object.amount`), 
 on value hover, array index display, and item count previews on collapsed nodes.
 Also unified the dashboard under the same dark mode theme as the landing page.
 
-### 7. Side-by-Side Payload Diffing (Day 6 - COMPLETE)
+### 7. Side-by-Side Payload Diffing (Day 6: COMPLETE)
 Custom-built structural JSON diff engine with a compare mode toggle in the event
 sidebar. Select any two events (tagged A/B with blue/purple badges), and the right
 panel switches to a DiffViewer showing color-coded additions (green), removals (red),
 changes (amber with arrow notation), and unchanged values. Includes a summary bar
 with counts, and a toggle to diff either payloads or headers.
 
-### 8. Payload Search & Filtering (Day 7 - COMPLETE)
+### 8. Payload Search & Filtering (Day 7: COMPLETE)
 Query search bar powered by a server-side search API and a Postgres GIN index on the JSONB payload column. Allows full-text search across raw bodies, headers, and parsed payload values, as well as exact key-path checks using Postgres SQL/JSON path queries (`jsonb_path_exists`), all with client-side debouncing and live stream preservation.
 
 ### 9. Latch CLI / The "ngrok killer" (Day 8)
@@ -122,7 +122,7 @@ Create a lightweight CLI (`npx latch-cli listen <projectId> --forward-to <localU
 
 ---
 
-## Architecture (locked — do not reopen)
+## Architecture (locked: do not reopen)
 
 ### Stack decisions
 
@@ -135,42 +135,42 @@ Create a lightweight CLI (`npx latch-cli listen <projectId> --forward-to <localU
 | Auth | Auth.js v5 (NextAuth beta) + GitHub OAuth | Self-hosted, no MAU limits |
 | Real-time | Server-Sent Events (SSE) | One-directional data flow, no WS infra needed |
 | Deployment | Vercel free hobby tier | Native Next.js, Edge Runtime, zero config |
-| ORM | None — raw SQL only | Fewer abstractions, faster to build and debug |
+| ORM | None: raw SQL only | Fewer abstractions, faster to build and debug |
 
 ### Non-negotiable rules
 
-**Rule 1 — Return 200 before processing.**
+**Rule 1: Return 200 before processing.**
 The ingest route pushes to Redis and returns immediately. It never writes to
 the database. Processing happens in the queue consumer, triggered async.
 Stripe and GitHub retry on non-200 responses. Breaking this rule causes
 duplicate events and broken user state.
 
-**Rule 2 — Never call req.json() in the ingest route.**
+**Rule 2: Never call req.json() in the ingest route.**
 Always use req.text(). The raw body string is what providers sign against when
 computing HMAC signatures. Calling .json() consumes the stream and makes
 signature verification impossible.
 
-**Rule 3 — SSE endpoints always use Edge Runtime.**
+**Rule 3: SSE endpoints always use Edge Runtime.**
 Export `export const runtime = 'edge'` in every SSE route file. Vercel free
 tier gives 30 seconds on Edge functions. EventSource reconnects automatically
-via Last-Event-ID when the connection closes — this is expected behaviour,
+via Last-Event-ID when the connection closes; this is expected behaviour,
 not a bug.
 
-**Rule 4 — No WebSockets.**
+**Rule 4: No WebSockets.**
 Data flows one direction on the dashboard: server to client. SSE is the
 correct tool. Do not introduce WebSocket infrastructure.
 
-**Rule 5 — Store raw body AND parsed body.**
+**Rule 5: Store raw body AND parsed body.**
 Every event row has both `raw_body TEXT` (for signature verification) and
-`body JSONB` (for display and search). If JSON parsing fails, body is null —
+`body JSONB` (for display and search). If JSON parsing fails, body is null;
 the raw_body is always the source of truth.
 
-**Rule 6 — Auth is always last.**
+**Rule 6: Auth is always last.**
 Build features fully before adding authentication. Auth failures create
 debugging rabbit holes that kill momentum. Middleware is added on Day 3
 after all features work.
 
-**Rule 7 — DATABASE_URL_UNPOOLED for migrations only.**
+**Rule 7: DATABASE_URL_UNPOOLED for migrations only.**
 Scripts that run outside of Next.js (migrations, seeds) must use the direct
 connection string. All runtime queries use the pooled DATABASE_URL.
 
@@ -252,12 +252,12 @@ latch/
 
 ## Build philosophy
 
-This is built antigravity — no unnecessary architecture, no premature abstraction,
+This is built antigravity: no unnecessary architecture, no premature abstraction,
 no tooling that does not directly serve the product. The goal is a working,
 deployed product in three days of active building using an AI agent.
 
 Every session prompt tells the agent exactly which files to create, the exact
-patterns to use, and — critically — what not to build yet. Features are built
+patterns to use, and, critically, what not to build yet. Features are built
 in dependency order: ingestion before UI, UI before auth, all features before
 deployment.
 
@@ -270,8 +270,8 @@ is the portfolio.
 ## Environment variables
 
 ```
-DATABASE_URL=                     # Neon pooled — all runtime queries
-DATABASE_URL_UNPOOLED=            # Neon direct — migrations and seed scripts only
+DATABASE_URL=                     # Neon pooled: all runtime queries
+DATABASE_URL_UNPOOLED=            # Neon direct: migrations and seed scripts only
 UPSTASH_REDIS_REST_URL=           # Upstash Redis REST endpoint
 UPSTASH_REDIS_REST_TOKEN=         # Upstash Redis token
 QSTASH_TOKEN=                     # QStash publish token

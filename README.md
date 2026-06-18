@@ -1,6 +1,6 @@
-# Latch — Real-time Webhook Ledger & Replay Engine
+# Latch | Real-time Webhook Ledger & Replay Engine
 
-**Latch** is a developer-focused, real-time webhook ledger and replay utility. By swapping a third-party service's endpoint URL (e.g. Stripe, GitHub, Shopify) to point at Latch, developers can capture incoming events permanently, inspect payload states live, verify cryptographic signatures, and replay transactions with a single click — keeping the original headers and body structure completely intact.
+**Latch** is a developer-focused, real-time webhook ledger and replay utility. By swapping a third-party service's endpoint URL (e.g. Stripe, GitHub, Shopify) to point at Latch, developers can capture incoming events permanently, inspect payload states live, verify cryptographic signatures, and replay transactions with a single click, keeping the original headers and body structure completely intact.
 
 ---
 
@@ -98,12 +98,12 @@ A successful connection should return status `200 OK` with:
 ```
 ├── app/
 │   ├── api/
-│   │   ├── health/route.ts       # GET — Neon + Redis live health status
-│   │   ├── ingest/[projectId]/   # POST — Receives webhooks & enqueues to Redis
-│   │   ├── process/route.ts      # POST — Queue consumer (triggered by QStash)
-│   │   ├── events/stream/        # GET — Real-time event stream (SSE Edge route)
-│   │   ├── events/search/        # GET — GIN-indexed Postgres search query router
-│   │   └── replay/route.ts       # POST — Forwards captured events to destinations
+│   │   ├── health/route.ts       # GET - Neon + Redis live health status
+│   │   ├── ingest/[projectId]/   # POST - Receives webhooks & enqueues to Redis
+│   │   ├── process/route.ts      # POST - Queue consumer (triggered by QStash)
+│   │   ├── events/stream/        # GET - Real-time event stream (SSE Edge route)
+│   │   ├── events/search/        # GET - GIN-indexed Postgres search query router
+│   │   └── replay/route.ts       # POST - Forwards captured events to destinations
 │   └── dashboard/                # Project views & live event logs
 │       ├── page.tsx              # Project list & creation
 │       └── [projectId]/

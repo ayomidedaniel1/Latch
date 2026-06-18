@@ -26,7 +26,7 @@ is the top priority in the ingest path. Everything else can be slow.
 
 ---
 
-## Pattern 1 — Async Ingest (The Core Rule)
+## Pattern 1: Async Ingest (The Core Rule)
 
 The ingest route has one job: accept the payload, buffer it, return 200.
 Never do database writes in the ingest route. Never call external services.
@@ -62,7 +62,7 @@ will cause retries, duplicates, and broken user states. The queue is the safety 
 
 ---
 
-## Pattern 2 — Queue Consumer (Called by Upstash QStash)
+## Pattern 2: Queue Consumer (Called by Upstash QStash)
 
 The consumer is a POST endpoint that QStash calls after every enqueue.
 It reads from Redis, writes to Neon, and handles errors without crashing.
@@ -100,12 +100,12 @@ export const POST = verifyQStashSignature(async (req: Request) => {
 
 **Note on query syntax:** `db` is the tagged-template function from `neon()`, not a
 `pg`-style client. Always call it as `` db`SELECT ... ${value}` ``, never as
-`db.query(sql, params)` — that method doesn't exist on this client and will throw.
+`db.query(sql, params)` - that method doesn't exist on this client and will throw.
 ```
 
 ---
 
-## Pattern 3 — SSE Stream Endpoint (Edge Runtime Required)
+## Pattern 3: SSE Stream Endpoint (Edge Runtime Required)
 
 The SSE endpoint polls Neon every 2 seconds for events newer than `Last-Event-ID`.
 It MUST use Edge Runtime. Without `export const runtime = 'edge'`, Vercel serverless
@@ -115,7 +115,7 @@ functions time out at 10 seconds and kill the connection too fast for any useful
 // app/api/events/stream/route.ts
 import { db } from '@/lib/db';
 // Day 3: import { auth } from '@/auth' and check the session here, scoping
-// projectId lookups to session.user.id. No auth.ts exists yet on Day 2 — do
+// projectId lookups to session.user.id. No auth.ts exists yet on Day 2 - do
 // not import it before it's built.
 
 export const runtime = 'edge';
@@ -145,7 +145,7 @@ export async function GET(req: Request) {
 
       // Resuming after a reconnect: look up where we left off by timestamp,
       // not by faking a UUID. A scalar subquery that matches nothing returns
-      // NULL, and `received_at > NULL` is NULL for every row — silently
+      // NULL, and `received_at > NULL` is NULL for every row, silently
       // returning zero events. Resolve the cursor in application code instead.
       if (lastEventId) {
         const rows = await db`
@@ -195,7 +195,7 @@ export async function GET(req: Request) {
           }
         } catch (err) {
           console.error('[stream] poll failed', err);
-          // Skip this tick on a transient db error — don't close the stream
+          // Skip this tick on a transient db error - don't close the stream
         }
 
         await new Promise(r => setTimeout(r, POLL_INTERVAL_MS));
@@ -217,11 +217,11 @@ export async function GET(req: Request) {
 **Edge Runtime limit:** Vercel free hobby gives 30s max on Edge functions.
 The EventSource API automatically reconnects on close, sending `Last-Event-ID`
 so the stream resumes without gaps. This is the expected, dominant reconnect
-cycle in this design — not occasional network flakiness, a real 30-second clock.
+cycle in this design, not occasional network flakiness, a real 30-second clock.
 
 ---
 
-## Pattern 4 — EventSource Client Component
+## Pattern 4: EventSource Client Component
 
 ```typescript
 // components/EventFeed.tsx
@@ -265,7 +265,7 @@ export function EventFeed({ projectId }: { projectId: string }) {
 
 ---
 
-## Pattern 5 — Replay Engine
+## Pattern 5: Replay Engine
 
 Replay fetches the original event and forwards it to a destination URL.
 The original headers are preserved exactly. `X-Webhook-Replay: true` is appended.
@@ -318,7 +318,7 @@ export async function POST(req: Request) {
 
 ---
 
-## Pattern 6 — Auth.js v5 GitHub OAuth
+## Pattern 6: Auth.js v5 GitHub OAuth
 
 ```typescript
 // auth.ts
@@ -362,10 +362,10 @@ The pooled connection string (`DATABASE_URL`) is for all other queries.
 
 ---
 
-## Pattern 7 — Webhook Signature Verification
+## Pattern 7: Webhook Signature Verification
 
 Run this in the queue consumer after popping from Redis, before inserting to Neon.
-Log failures but do not drop the event — dropped events are worse than unverified ones.
+Log failures but do not drop the event: dropped events are worse than unverified ones.
 
 ```typescript
 // lib/verify.ts
@@ -414,9 +414,9 @@ export const redis = Redis.fromEnv();
 
 ## Common Mistakes to Avoid
 
-- Do not use `@vercel/postgres` — use `@neondatabase/serverless` directly
-- Do not use Prisma or Drizzle — raw SQL only in this project
-- Do not use `fetch` in the SSE stream without a try/catch — unhandled errors close the stream silently
-- Do not store `content-length` or `host` headers in the events table — they change on replay
-- Do not use `req.json()` in the ingest route — use `req.text()` to preserve raw body for signature verification
-- Do not run migrations with the pooled connection string — use `DATABASE_URL_UNPOOLED`
+- Do not use `@vercel/postgres`: use `@neondatabase/serverless` directly
+- Do not use Prisma or Drizzle: raw SQL only in this project
+- Do not use `fetch` in the SSE stream without a try/catch: unhandled errors close the stream silently
+- Do not store `content-length` or `host` headers in the events table: they change on replay
+- Do not use `req.json()` in the ingest route: use `req.text()` to preserve raw body for signature verification
+- Do not run migrations with the pooled connection string: use `DATABASE_URL_UNPOOLED`
