@@ -76,7 +76,7 @@ provider. It returns 200 OK in under 50ms regardless of payload size. The payloa
 is buffered to Redis and processed asynchronously so no webhook is ever held up
 by a slow database write.
 
-### 2. Live dashboard (Day 2)
+### 2. Live dashboard (Day 2 — COMPLETE)
 A real-time event feed built on Server-Sent Events. The browser opens an
 EventSource connection to `/api/events/stream`. As webhooks land, they stream
 to the dashboard in real time without page refresh. Each event shows the source,

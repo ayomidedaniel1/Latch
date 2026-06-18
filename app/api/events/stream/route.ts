@@ -1,4 +1,88 @@
-// Placeholder for SSE events stream route
-export async function GET() {
-  return Response.json({ message: 'Stream route placeholder' });
+import { db } from '@/lib/db';
+
+export const runtime = 'edge';
+
+const POLL_INTERVAL_MS = 2000;
+const INITIAL_BATCH_SIZE = 50;
+const PER_POLL_LIMIT = 20;
+
+export async function GET(req: Request) {
+  const url = new URL(req.url);
+  const projectId = url.searchParams.get('projectId');
+  if (!projectId) return new Response('Missing projectId', { status: 400 });
+
+  const lastEventId = req.headers.get('last-event-id');
+  const encoder = new TextEncoder();
+
+  const stream = new ReadableStream({
+    async start(controller) {
+      const send = (data: string, id?: string) => {
+        const msg = id ? `id: ${id}\ndata: ${data}\n\n` : `data: ${data}\n\n`;
+        controller.enqueue(encoder.encode(msg));
+      };
+
+      send('connected');
+
+      let cursorTimestamp: string | null = null;
+
+      if (lastEventId) {
+        const rows = await db`
+          SELECT received_at FROM events WHERE id = ${lastEventId} LIMIT 1
+        `;
+        cursorTimestamp = rows[0]?.received_at ?? null;
+      }
+
+      if (!cursorTimestamp) {
+        const initial = await db`
+          SELECT id, headers, body, raw_body, received_at
+          FROM events
+          WHERE project_id = ${projectId}
+          ORDER BY received_at DESC
+          LIMIT ${INITIAL_BATCH_SIZE}
+        `;
+        for (const row of initial.reverse()) {
+          send(JSON.stringify(row), row.id);
+          cursorTimestamp = row.received_at;
+        }
+      }
+
+      while (true) {
+        try {
+          const rows = cursorTimestamp
+            ? await db`
+                SELECT id, headers, body, raw_body, received_at
+                FROM events
+                WHERE project_id = ${projectId} AND received_at > ${cursorTimestamp}
+                ORDER BY received_at ASC
+                LIMIT ${PER_POLL_LIMIT}
+              `
+            : await db`
+                SELECT id, headers, body, raw_body, received_at
+                FROM events
+                WHERE project_id = ${projectId}
+                ORDER BY received_at ASC
+                LIMIT ${PER_POLL_LIMIT}
+              `;
+
+          for (const row of rows) {
+            send(JSON.stringify(row), row.id);
+            cursorTimestamp = row.received_at;
+          }
+        } catch (err) {
+          console.error('[stream] poll failed', err);
+        }
+
+        await new Promise(r => setTimeout(r, POLL_INTERVAL_MS));
+      }
+    },
+  });
+
+  return new Response(stream, {
+    headers: {
+      'Content-Type': 'text/event-stream',
+      'Cache-Control': 'no-cache, no-transform',
+      'X-Accel-Buffering': 'no',
+      'Connection': 'keep-alive',
+    },
+  });
 }
