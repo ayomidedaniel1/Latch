@@ -2,16 +2,21 @@ import { db } from '@/lib/db';
 import { EventFeed } from '@/components/EventFeed';
 import { IngestUrl } from '@/components/IngestUrl';
 import { notFound } from 'next/navigation';
+import { auth } from '@/auth';
 
 export default async function ProjectPage({
   params,
 }: {
   params: Promise<{ projectId: string }>;
 }) {
+  const session = await auth();
+  const userId = session?.user?.id;
+  if (!userId) notFound();
+
   const { projectId } = await params;
 
   const rows = await db`
-    SELECT id, name FROM projects WHERE id = ${projectId} LIMIT 1
+    SELECT id, name, destination_url FROM projects WHERE id = ${projectId} AND user_id = ${userId} LIMIT 1
   `;
   const project = rows[0];
 
@@ -23,7 +28,7 @@ export default async function ProjectPage({
       <div className="mb-8">
         <IngestUrl projectId={project.id} />
       </div>
-      <EventFeed projectId={project.id} />
+      <EventFeed projectId={project.id} destinationUrl={project.destination_url ?? ''} />
     </main>
   );
 }

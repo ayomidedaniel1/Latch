@@ -1,4 +1,5 @@
 import { db } from '@/lib/db';
+import { auth } from '@/auth';
 
 export const runtime = 'edge';
 
@@ -7,9 +8,17 @@ const INITIAL_BATCH_SIZE = 50;
 const PER_POLL_LIMIT = 20;
 
 export async function GET(req: Request) {
+  const session = await auth();
+  if (!session?.user?.id) return new Response('Unauthorized', { status: 401 });
+
   const url = new URL(req.url);
   const projectId = url.searchParams.get('projectId');
   if (!projectId) return new Response('Missing projectId', { status: 400 });
+
+  const projectRows = await db`
+    SELECT id FROM projects WHERE id = ${projectId} AND user_id = ${session.user.id} LIMIT 1
+  `;
+  if (projectRows.length === 0) return new Response('Unauthorized', { status: 401 });
 
   const lastEventId = req.headers.get('last-event-id');
   const encoder = new TextEncoder();

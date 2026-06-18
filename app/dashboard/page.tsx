@@ -2,13 +2,17 @@ import { db } from '@/lib/db';
 import Link from 'next/link';
 import { createProject } from './actions';
 import { IngestUrl } from '@/components/IngestUrl';
-import { DEV_USER_ID } from '@/lib/constants';
+import { auth } from '@/auth';
 
 export default async function DashboardPage() {
+  const session = await auth();
+  const userId = session?.user?.id;
+  if (!userId) return null;
+
   const projects = await db`
     SELECT id, name, destination_url, created_at
     FROM projects
-    WHERE user_id = ${DEV_USER_ID}
+    WHERE user_id = ${userId}
     ORDER BY created_at DESC
   `;
 

@@ -11,7 +11,13 @@ type WebhookEvent = {
   received_at: string;
 };
 
-export function EventFeed({ projectId }: { projectId: string }) {
+export function EventFeed({
+  projectId,
+  destinationUrl,
+}: {
+  projectId: string;
+  destinationUrl?: string;
+}) {
   const [events, setEvents] = useState<WebhookEvent[]>([]);
   const [connected, setConnected] = useState(false);
   const [selectedId, setSelectedId] = useState<string | null>(null);
@@ -48,9 +54,8 @@ export function EventFeed({ projectId }: { projectId: string }) {
               <span className="absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75 animate-ping" />
             )}
             <span
-              className={`relative inline-flex h-2 w-2 rounded-full ${
-                connected ? 'bg-emerald-500' : 'bg-red-500'
-              }`}
+              className={`relative inline-flex h-2 w-2 rounded-full ${connected ? 'bg-emerald-500' : 'bg-red-500'
+                }`}
             />
           </span>
           {connected ? 'Live' : 'Reconnecting…'}
@@ -58,7 +63,7 @@ export function EventFeed({ projectId }: { projectId: string }) {
 
         {events.length === 0 ? (
           <p className="text-sm text-gray-500 leading-relaxed">
-            No webhooks yet. Point a service at the URL above and they'll show
+            No webhooks yet. Point a service at the URL above and they&apos;ll show
             up here in real time.
           </p>
         ) : (
@@ -67,11 +72,10 @@ export function EventFeed({ projectId }: { projectId: string }) {
               <li key={event.id}>
                 <button
                   onClick={() => setSelectedId(event.id)}
-                  className={`w-full text-left rounded-lg border px-3 py-2 text-sm transition-colors ${
-                    selected?.id === event.id
+                  className={`w-full text-left rounded-lg border px-3 py-2 text-sm transition-colors ${selected?.id === event.id
                       ? 'border-gray-900 bg-gray-50'
                       : 'border-gray-200 hover:border-gray-300'
-                  }`}
+                    }`}
                 >
                   <div className="font-mono text-xs text-gray-500">
                     {new Date(event.received_at).toLocaleTimeString()}
@@ -86,7 +90,7 @@ export function EventFeed({ projectId }: { projectId: string }) {
         )}
       </div>
 
-      <div>{selected && <EventViewer event={selected} />}</div>
+      <div>{selected && <EventViewer event={selected} destinationUrl={destinationUrl || ''} />}</div>
     </div>
   );
 }

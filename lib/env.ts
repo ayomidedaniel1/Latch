@@ -16,9 +16,9 @@ const envSchema = z.object({
 
   NEXT_PUBLIC_APP_URL: z.string().url(),
 
-  AUTH_SECRET: z.string().optional(),
-  AUTH_GITHUB_ID: z.string().optional(),
-  AUTH_GITHUB_SECRET: z.string().optional(),
+  AUTH_SECRET: z.string().min(1),
+  AUTH_GITHUB_ID: z.string().min(1),
+  AUTH_GITHUB_SECRET: z.string().min(1),
 });
 
 const parsed = envSchema.safeParse(process.env);

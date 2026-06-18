@@ -2,9 +2,15 @@
 
 import { db } from '@/lib/db';
 import { revalidatePath } from 'next/cache';
-import { DEV_USER_ID } from '@/lib/constants';
+import { auth } from '@/auth';
 
 export async function createProject(formData: FormData) {
+  const session = await auth();
+  const userId = session?.user?.id;
+  if (!userId) {
+    throw new Error('Unauthorized');
+  }
+
   const name = formData.get('name')?.toString().trim();
   const destinationUrl = formData.get('destinationUrl')?.toString().trim() || null;
 
@@ -14,7 +20,7 @@ export async function createProject(formData: FormData) {
 
   await db`
     INSERT INTO projects (user_id, name, destination_url)
-    VALUES (${DEV_USER_ID}, ${name}, ${destinationUrl})
+    VALUES (${userId}, ${name}, ${destinationUrl})
   `;
 
   revalidatePath('/dashboard');

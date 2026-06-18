@@ -1,5 +1,15 @@
-// Placeholder for route protection middleware
-export default function middleware() {}
+import { auth } from '@/auth';
+import { NextResponse } from 'next/server';
+
+export default auth((req) => {
+  if (!req.auth) {
+    const callbackUrl = encodeURIComponent(req.nextUrl.pathname + req.nextUrl.search);
+    return NextResponse.redirect(
+      new URL(`/api/auth/signin?callbackUrl=${callbackUrl}`, req.url)
+    );
+  }
+});
+
 export const config = {
-  matcher: [],
+  matcher: ['/dashboard/:path*'],
 };

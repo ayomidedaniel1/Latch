@@ -1,3 +1,5 @@
+import { ReplayButton } from './ReplayButton';
+
 type WebhookEvent = {
   id: string;
   headers: Record<string, string>;
@@ -6,7 +8,13 @@ type WebhookEvent = {
   received_at: string;
 };
 
-export function EventViewer({ event }: { event: WebhookEvent }) {
+export function EventViewer({
+  event,
+  destinationUrl,
+}: {
+  event: WebhookEvent;
+  destinationUrl: string;
+}) {
   return (
     <div className="rounded-lg border border-gray-200 p-4 text-sm space-y-4">
       <div>
@@ -15,6 +23,9 @@ export function EventViewer({ event }: { event: WebhookEvent }) {
           {new Date(event.received_at).toLocaleString()}
         </div>
       </div>
+
+      <ReplayButton eventId={event.id} initialDestinationUrl={destinationUrl} />
+
       <div>
         <div className="text-xs text-gray-500 mb-1">Headers</div>
         <pre className="bg-gray-50 rounded-md p-3 overflow-x-auto text-xs font-mono leading-relaxed">
