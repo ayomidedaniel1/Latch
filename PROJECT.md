@@ -82,16 +82,39 @@ EventSource connection to `/api/events/stream`. As webhooks land, they stream
 to the dashboard in real time without page refresh. Each event shows the source,
 timestamp, HTTP method, and a JSON viewer for the full payload.
 
-### 3. Replay engine (Day 3)
+### 3. Replay engine (Day 3 — COMPLETE)
 One-click replay of any stored event. The original headers and raw body are
 forwarded to any configurable destination URL with an extra
 `X-Webhook-Replay: true` header added. The response — status code, body,
 and latency — is stored in the `replays` table and shown inline.
 
-### 4. Authentication (Day 3)
+### 4. Authentication (Day 3 — COMPLETE)
 GitHub OAuth via Auth.js v5. This is a developer tool — everyone in the target
 audience has a GitHub account, so there is no password or email flow.
 Sessions are stored in Neon using the pg adapter.
+
+### 5. Landing Page (Day 4 — COMPLETE)
+A high-converting homepage (at `/`) introducing Latch. Includes value-proposition
+highlights, a responsive visual mockup demonstrating real-time webhook flow,
+and clean call-to-action buttons redirecting authenticated users directly to their
+`/dashboard` or offering the GitHub login redirect.
+
+### 6. Interactive JSON Tree Viewer (Day 5 — COMPLETE)
+Custom-built interactive collapsible JSON tree viewer replacing raw `JSON.stringify` dumps
+across the entire dashboard. Features include: collapsible/expandable nodes with chevron
+toggles, syntax highlighting (emerald for strings, amber for numbers, purple for booleans,
+red for null), copy-path-to-clipboard on key hover (e.g. `data.object.amount`), copy-value
+on value hover, array index display, and item count previews on collapsed nodes.
+Also unified the dashboard under the same dark mode theme as the landing page.
+
+### 7. Side-by-Side Payload Diffing (Day 6)
+Allow developers to select any two events in the sidebar and render a visual Git-style diff of the JSON bodies, making it easy to identify when third-party provider API payload schemas change.
+
+### 8. Payload Search & Filtering (Day 7)
+Leverage Neon's fast `JSONB` indexing to add a query search bar to find specific metadata (e.g., `customer.email` or `checkout_id`) across all historical events in the database.
+
+### 9. Latch CLI / The "ngrok killer" (Day 8)
+Create a lightweight CLI (`npx latch-cli listen <projectId> --forward-to <localUrl>`) that subscribes to the Latch SSE stream and forwards webhooks locally to a developer's machine, eliminating the need for tunnel configuration.
 
 ---
 

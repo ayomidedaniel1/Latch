@@ -16,7 +16,7 @@ async function processNextItem(): Promise<Response> {
   const item = await redis.rpop<WebhookPayload | string>('webhook-queue');
 
   if (!item) {
-    // Queue is empty — normal, return 200
+    // Queue is empty - normal, return 200
     return Response.json({ ok: true, message: 'Queue empty' });
   }
 
@@ -33,12 +33,12 @@ async function processNextItem(): Promise<Response> {
     return Response.json({ ok: true, message: 'Unknown project, skipped' });
   }
 
-  // Try to parse raw body as JSON — fall back to null if it is not valid JSON
+  // Try to parse raw body as JSON - fall back to null if it is not valid JSON
   let body: unknown = null;
   try {
     body = JSON.parse(raw);
   } catch {
-    // Not JSON — raw_body is the source of truth, body column stays null
+    // Not JSON - raw_body is the source of truth, body column stays null
   }
 
   // Insert the event

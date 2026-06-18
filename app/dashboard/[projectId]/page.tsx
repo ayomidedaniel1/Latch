@@ -23,8 +23,8 @@ export default async function ProjectPage({
   if (!project) notFound();
 
   return (
-    <main className="max-w-4xl mx-auto px-6 py-12">
-      <h1 className="text-xl font-semibold mb-1">{project.name}</h1>
+    <main className="max-w-5xl mx-auto px-6 py-12">
+      <h1 className="text-xl font-semibold mb-1 text-zinc-100">{project.name}</h1>
       <div className="mb-8">
         <IngestUrl projectId={project.id} />
       </div>

@@ -15,10 +15,10 @@ export function IngestUrl({ projectId }: { projectId: string }) {
   return (
     <button
       onClick={handleCopy}
-      className="font-mono text-xs text-gray-500 hover:text-gray-900 transition-colors"
+      className="font-mono text-xs text-zinc-500 hover:text-emerald-400 transition-colors"
       title="Copy ingest URL"
     >
-      {copied ? 'Copied' : `/api/ingest/${projectId}`}
+      {copied ? '✓ Copied' : `/api/ingest/${projectId}`}
     </button>
   );
 }

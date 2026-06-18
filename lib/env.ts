@@ -26,7 +26,7 @@ const parsed = envSchema.safeParse(process.env);
 if (!parsed.success) {
   console.error('❌ Invalid environment variables:');
   console.error(parsed.error.flatten().fieldErrors);
-  throw new Error('Invalid environment variables — check .env.local against lib/env.ts');
+  throw new Error('Invalid environment variables - check .env.local against lib/env.ts');
 }
 
 export const env = {
