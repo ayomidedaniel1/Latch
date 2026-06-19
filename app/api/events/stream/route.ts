@@ -8,17 +8,42 @@ const INITIAL_BATCH_SIZE = 50;
 const PER_POLL_LIMIT = 20;
 
 export async function GET(req: Request) {
-  const session = await auth();
-  if (!session?.user?.id) return new Response('Unauthorized', { status: 401 });
-
   const url = new URL(req.url);
   const projectId = url.searchParams.get('projectId');
   if (!projectId) return new Response('Missing projectId', { status: 400 });
 
-  const projectRows = await db`
-    SELECT id FROM projects WHERE id = ${projectId} AND user_id = ${session.user.id} LIMIT 1
-  `;
-  if (projectRows.length === 0) return new Response('Unauthorized', { status: 401 });
+  let authorized = false;
+
+  const session = await auth();
+  if (session?.user?.id) {
+    const projectRows = await db`
+      SELECT id FROM projects WHERE id = ${projectId} AND user_id = ${session.user.id} LIMIT 1
+    `;
+    if (projectRows.length > 0) {
+      authorized = true;
+    }
+  } else {
+    // Check Authorization: Bearer <cli_token> for Latch CLI
+    const authHeader = req.headers.get('authorization');
+    let token = authHeader?.startsWith('Bearer ') ? authHeader.substring(7).trim() : null;
+
+    if (!token) {
+      token = url.searchParams.get('token');
+    }
+
+    if (token) {
+      const projectRows = await db`
+        SELECT id FROM projects WHERE id = ${projectId} AND cli_token = ${token} LIMIT 1
+      `;
+      if (projectRows.length > 0) {
+        authorized = true;
+      }
+    }
+  }
+
+  if (!authorized) {
+    return new Response('Unauthorized', { status: 401 });
+  }
 
   const lastEventId = req.headers.get('last-event-id');
   const encoder = new TextEncoder();
@@ -43,7 +68,7 @@ export async function GET(req: Request) {
 
       if (!cursorTimestamp) {
         const initial = await db`
-          SELECT id, headers, body, raw_body, received_at
+          SELECT id, method, headers, body, raw_body, received_at
           FROM events
           WHERE project_id = ${projectId}
           ORDER BY received_at DESC
@@ -59,14 +84,14 @@ export async function GET(req: Request) {
         try {
           const rows = cursorTimestamp
             ? await db`
-                SELECT id, headers, body, raw_body, received_at
+                SELECT id, method, headers, body, raw_body, received_at
                 FROM events
                 WHERE project_id = ${projectId} AND received_at > ${cursorTimestamp}
                 ORDER BY received_at ASC
                 LIMIT ${PER_POLL_LIMIT}
               `
             : await db`
-                SELECT id, headers, body, raw_body, received_at
+                SELECT id, method, headers, body, raw_body, received_at
                 FROM events
                 WHERE project_id = ${projectId}
                 ORDER BY received_at ASC

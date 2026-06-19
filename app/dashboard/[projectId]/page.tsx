@@ -7,6 +7,7 @@ import { Navbar } from '@/components/Navbar';
 import Link from 'next/link';
 import { updateProject } from '../actions';
 import { DeleteProjectButton } from '@/components/DeleteProjectButton';
+import { CLIInstructions } from '@/components/CLIInstructions';
 
 export default async function ProjectPage({
   params,
@@ -20,7 +21,7 @@ export default async function ProjectPage({
   const { projectId } = await params;
 
   const rows = await db`
-    SELECT id, name, destination_url FROM projects WHERE id = ${projectId} AND user_id = ${userId} LIMIT 1
+    SELECT id, name, destination_url, cli_token FROM projects WHERE id = ${projectId} AND user_id = ${userId} LIMIT 1
   `;
   const project = rows[0];
 
@@ -115,6 +116,13 @@ export default async function ProjectPage({
             </div>
           </div>
         </details>
+
+        {/* CLI Instructions Card */}
+        <CLIInstructions
+          projectId={project.id}
+          cliToken={project.cli_token}
+          destinationUrl={project.destination_url}
+        />
 
         {/* Live event feed */}
         <div className="pt-2">

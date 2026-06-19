@@ -1,0 +1,29 @@
+{
+  "name": "@ayomidedaniel/latch-cli",
+  "version": "1.0.3",
+  "description": "Secure real-time local webhook forwarding CLI for Latch.",
+  "main": "dist/index.js",
+  "type": "module",
+  "bin": {
+    "latch-cli": "./bin.js"
+  },
+  "scripts": {
+    "build": "tsc && node -e \"const fs = require('fs'); ['dist/index.js', 'bin.js'].forEach(f => { if (fs.existsSync(f)) fs.writeFileSync(f, fs.readFileSync(f, 'utf8').split('\\r').join('')); });\"",
+    "prepublishOnly": "npm run build"
+  },
+  "keywords": [
+    "latch",
+    "webhook",
+    "ledger",
+    "ngrok",
+    "local",
+    "tunnel",
+    "replay"
+  ],
+  "author": "",
+  "license": "MIT",
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "typescript": "^5.0.0"
+  }
+}

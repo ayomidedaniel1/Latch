@@ -3,6 +3,7 @@ CREATE TABLE IF NOT EXISTS projects (
   user_id TEXT NOT NULL,
   name TEXT NOT NULL,
   destination_url TEXT,
+  cli_token UUID UNIQUE DEFAULT gen_random_uuid(),
   created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
@@ -73,3 +74,7 @@ CREATE TABLE IF NOT EXISTS verification_token (
   expires TIMESTAMPTZ NOT NULL,
   PRIMARY KEY (identifier, token)
 );
+
+-- Schema migration updates
+ALTER TABLE projects ADD COLUMN IF NOT EXISTS cli_token UUID UNIQUE DEFAULT gen_random_uuid();
+

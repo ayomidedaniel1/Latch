@@ -82,3 +82,28 @@ export async function deleteProject(projectId: string) {
   revalidatePath('/dashboard');
   redirect('/dashboard');
 }
+
+export async function regenerateCliToken(projectId: string) {
+  const session = await auth();
+  const userId = session?.user?.id;
+  if (!userId) {
+    throw new Error('Unauthorized');
+  }
+
+  // Verify ownership before updating
+  const projectRows = await db`
+    SELECT id FROM projects WHERE id = ${projectId} AND user_id = ${userId} LIMIT 1
+  `;
+  if (projectRows.length === 0) {
+    throw new Error('Unauthorized: Project not owned by user');
+  }
+
+  await db`
+    UPDATE projects
+    SET cli_token = gen_random_uuid()
+    WHERE id = ${projectId}
+  `;
+
+  revalidatePath(`/dashboard/${projectId}`);
+}
+

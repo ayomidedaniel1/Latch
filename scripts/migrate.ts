@@ -1,8 +1,23 @@
-import { readFileSync } from 'fs';
+import { readFileSync, existsSync } from 'fs';
 import { join } from 'path';
 import { neon } from '@neondatabase/serverless';
 
 async function main() {
+  const envLocalPath = join(process.cwd(), '.env.local');
+  if (existsSync(envLocalPath)) {
+    const envConfig = readFileSync(envLocalPath, 'utf-8');
+    for (const line of envConfig.split('\n')) {
+      const trimmed = line.trim();
+      if (!trimmed || trimmed.startsWith('#')) continue;
+      const parts = trimmed.split('=');
+      const key = parts[0].trim();
+      const value = parts.slice(1).join('=').trim();
+      if (key && value && !process.env[key]) {
+        process.env[key] = value;
+      }
+    }
+  }
+
   const connectionString = process.env.DATABASE_URL_UNPOOLED;
   if (!connectionString) {
     throw new Error('DATABASE_URL_UNPOOLED is required for migrations');
