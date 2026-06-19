@@ -136,7 +136,7 @@ export function CLIInstructions({
             {cliToken && (
               <button
                 onClick={handleCopyToken}
-                className="p-1 rounded hover:bg-zinc-900 text-zinc-500 hover:text-white transition-colors cursor-pointer flex-shrink-0"
+                className="p-1 rounded hover:bg-zinc-900 text-zinc-500 hover:text-white transition-colors cursor-pointer shrink-0"
                 title="Copy Token"
               >
                 {copiedToken ? (
