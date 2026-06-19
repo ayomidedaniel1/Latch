@@ -29,7 +29,7 @@ ${BOLD}${GREEN}Latch CLI (Local Tunnel Proxy)${RESET}
 Secure real-time local webhook forwarding without ngrok.
 
 ${BOLD}Usage:${RESET}
-  npx latch-cli listen <projectId> --forward-to <localUrl> [options]
+  npx @ayomidedaniel/latch-cli listen <projectId> --forward-to <localUrl> [options]
 
 ${BOLD}Arguments:${RESET}
   projectId                The UUID of your Latch project.
@@ -41,8 +41,8 @@ ${BOLD}Options:${RESET}
   -h, --help               Display this help guide.
 
 ${BOLD}Examples:${RESET}
-  npx latch-cli listen d3b07384-d113-4956-a5db-e1c725a34e32 -f http://localhost:3000/api/webhook -t sec_token
-  natch-cli listen d3b07384-d113-4956-a5db-e1c725a34e32 --forward-to http://localhost:8080/stripe-hooks
+  npx @ayomidedaniel/latch-cli listen d3b07384-d113-4956-a5db-e1c725a34e32 -f http://localhost:3000/api/webhook -t sec_token
+  npx @ayomidedaniel/latch-cli listen d3b07384-d113-4956-a5db-e1c725a34e32 --forward-to http://localhost:8080/stripe-hooks
 `);
 }
 

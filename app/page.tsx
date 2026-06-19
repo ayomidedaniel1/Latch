@@ -26,8 +26,8 @@ const FEATURES = [
   {
     title: 'Latch CLI Proxy Tunnel',
     description:
-      'Run a single line terminal command to forward webhooks straight to localhost:3000. Remove local tunneling service configuration completely.',
-    status: 'coming-soon' as const,
+      'Sign in, create a project, and run a single line terminal command to forward webhooks straight to localhost:3000.',
+    status: 'live' as const,
   },
 ];
 
@@ -49,7 +49,7 @@ export default async function Home() {
             </span>
           </h1>
           <p className="text-base md:text-lg text-zinc-400 leading-relaxed max-w-2xl mx-auto">
-            A developer-first, permanent webhook ledger. Connect Stripe, GitHub, Shopify, or any custom API in seconds. No tunnels, no lost events, infinite one-click replays.
+            A developer-first, permanent webhook ledger. Connect any third-party service or custom API in seconds. No tunnels, no lost events, infinite one-click replays.
           </p>
           <div className="pt-2">
             {isAuthenticated ? (

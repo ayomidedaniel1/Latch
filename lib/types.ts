@@ -1,5 +1,6 @@
 export type WebhookEvent = {
   id: string;
+  method: string;
   headers: Record<string, string>;
   body: unknown;
   raw_body: string;

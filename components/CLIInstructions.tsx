@@ -22,7 +22,7 @@ export function CLIInstructions({
   const [isPending, startTransition] = useTransition();
 
   const forwardUrl = destinationUrl || 'http://localhost:3000/api/webhook';
-  const command = `npx latch-cli listen ${projectId} --forward-to ${forwardUrl} --token ${cliToken || '<token>'}`;
+  const command = `npx @ayomidedaniel/latch-cli listen ${projectId} --forward-to ${forwardUrl} --token ${cliToken || '<token>'}`;
 
   const handleCopyCommand = async () => {
     try {

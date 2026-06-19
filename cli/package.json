@@ -1,6 +1,6 @@
 {
   "name": "@ayomidedaniel/latch-cli",
-  "version": "1.0.3",
+  "version": "1.0.4",
   "description": "Secure real-time local webhook forwarding CLI for Latch.",
   "main": "dist/index.js",
   "type": "module",
