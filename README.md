@@ -108,33 +108,13 @@ A successful connection should return status `200 OK` with:
 
 ## Project Structure
 
-```
+```text
 ├── app/
-│   ├── api/
-│   │   ├── health/route.ts       # GET - Neon + Redis live health status
-│   │   ├── ingest/[projectId]/   # POST - Receives webhooks & enqueues to Redis
-│   │   ├── process/route.ts      # POST - Queue consumer (triggered by QStash)
-│   │   ├── events/stream/        # GET - Real-time event stream (SSE Edge route)
-│   │   ├── events/search/        # GET - GIN-indexed Postgres search query router
-│   │   └── replay/route.ts       # POST - Forwards captured events to destinations
-│   └── dashboard/                # Project views & live event logs
-│       ├── page.tsx              # Project list & creation
-│       └── [projectId]/
-│           └── page.tsx          # Real-time dashboard stream & filter hub
-├── components/                   # Real-time event feeds and interactive widgets
-│   ├── JsonTree.tsx              # Collapsible key-path interactive tree
-│   ├── DiffViewer.tsx            # Comparative diff highlighting engine
-│   ├── SearchBar.tsx             # Debounced query filter field
-│   ├── ConfirmationModal.tsx     # Portaled viewport modal overlay
-│   ├── ProfileDropdown.tsx       # User session drawer & logout handler
-│   ├── Navbar.tsx                # Universal dark header layout
-│   └── DeleteProjectButton.tsx   # Danger-zone deletion trigger
-├── lib/
-│   ├── db.ts                     # Neon serverless client setup
-│   ├── redis.ts                  # Upstash Redis client setup
-│   ├── verify.ts                 # Crypto signature verification (Stripe / GitHub)
-│   └── schema.sql                # SQL database table and index structures
-├── proxy.ts                      # Route protection middleware
-└── scripts/
-    └── migrate.ts                # DDL database schema runner
+│   ├── api/          # Webhook ingestion, streaming, and backend logic
+│   └── dashboard/    # Frontend UI for webhook inspection and project management
+├── cli/              # The Latch Node.js local tunneling CLI
+├── components/       # Reusable React components (JSON tree, diff viewer, feeds)
+├── lib/              # Database schema, Redis configuration, and utilities
+├── proxy.ts          # Route protection middleware (Auth.js)
+└── scripts/          # Database migration tools
 ```
