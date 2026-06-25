@@ -36,7 +36,10 @@ export async function POST(
     fetch(`${env.appUrl}/api/process`, { method: 'POST' }).catch(() => { });
   } else {
     // In production: publish to QStash
-    const qstash = new Client({ token: env.qstashToken });
+    const qstash = new Client({
+      token: env.qstashToken,
+      baseUrl: env.qstashUrl,
+    });
     await qstash.publish({
       url: `${env.appUrl}/api/process`,
       body: JSON.stringify({ source: 'ingest' }),

@@ -11,6 +11,7 @@ const envSchema = z.object({
   UPSTASH_REDIS_REST_TOKEN: z.string().min(1),
 
   QSTASH_TOKEN: z.string().min(1),
+  QSTASH_URL: z.string().url(),
   QSTASH_CURRENT_SIGNING_KEY: z.string().min(1),
   QSTASH_NEXT_SIGNING_KEY: z.string().min(1),
 
@@ -40,6 +41,7 @@ export const env = {
   redisToken: parsed.data.UPSTASH_REDIS_REST_TOKEN,
 
   qstashToken: parsed.data.QSTASH_TOKEN,
+  qstashUrl: parsed.data.QSTASH_URL,
 
   appUrl: parsed.data.NEXT_PUBLIC_APP_URL,
 
