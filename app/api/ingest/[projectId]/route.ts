@@ -30,22 +30,24 @@ export async function POST(
   // Push to Redis queue
   await redis.lpush('webhook-queue', JSON.stringify(payload));
 
-  // Trigger the consumer
+  // Return 200 immediately — payload is safely in Redis, never block on downstream calls
+  const response = Response.json({ received: true }, { status: 200 });
+
+  // Trigger the consumer (fire-and-forget — never await, never crash the ingest)
   if (env.isDev) {
-    // In dev: call the consumer locally, fire and forget
     fetch(`${env.appUrl}/api/process`, { method: 'POST' }).catch(() => { });
   } else {
-    // In production: publish to QStash
     const qstash = new Client({
       token: env.qstashToken,
       baseUrl: env.qstashUrl,
     });
-    await qstash.publish({
+    qstash.publish({
       url: `${env.appUrl}/api/process`,
       body: JSON.stringify({ source: 'ingest' }),
+    }).catch((err) => {
+      console.error('[ingest] QStash publish failed (payload is safe in Redis):', err);
     });
   }
 
-  // Return 200 immediately
-  return Response.json({ received: true }, { status: 200 });
+  return response;
 }
