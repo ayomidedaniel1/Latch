@@ -57,6 +57,7 @@ UPSTASH_REDIS_REST_TOKEN=...
 
 # Upstash QStash
 QSTASH_TOKEN=...
+QSTASH_URL=https://qstash.upstash.io/v1/publish
 QSTASH_CURRENT_SIGNING_KEY=sig_...
 QSTASH_NEXT_SIGNING_KEY=sig_...
 
@@ -103,6 +104,37 @@ A successful connection should return status `200 OK` with:
   "redis": "ok"
 }
 ```
+
+---
+
+## Usage Guide
+
+### 1. Create a Project
+- Sign in at your deployed URL with GitHub.
+- Click **"Create New Project"**, enter a name, and specify your optional local destination URL.
+- Latch will instantly generate your unique Ingest URL: `https://<your-domain>/api/ingest/<projectId>`.
+
+### 2. Configure Your Webhook Provider
+- Copy your unique Ingest URL from the dashboard.
+- Paste it into your provider's webhook settings:
+  - **Stripe:** Developers &rarr; Webhooks &rarr; Add endpoint
+  - **GitHub:** Repository &rarr; Settings &rarr; Webhooks &rarr; Add webhook
+  - **Shopify:** Settings &rarr; Notifications &rarr; Webhooks &rarr; Create webhook
+
+### 3. Forward Webhooks Locally with the CLI
+- Copy the CLI command directly from the project's dashboard.
+- Run it in your terminal to proxy webhooks to your local server without exposing it to the public internet:
+  ```bash
+  npx @ayomidedaniel/latch-cli listen <projectId> \
+    --forward-to http://localhost:3000/api/webhook \
+    --token <your-cli-token>
+  ```
+
+### 4. Inspect & Replay
+- Incoming events stream onto the dashboard in real-time.
+- Expand any event to inspect its payload using the interactive JSON tree viewer.
+- Select any two events to compare their payload schemas side-by-side with visual Git-style differences.
+- Click **"Replay"** on any event to re-dispatch the webhook to your destination URL with original headers and payload intact.
 
 ---
 

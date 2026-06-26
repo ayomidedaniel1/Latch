@@ -2,6 +2,7 @@ import Link from 'next/link';
 import { auth } from '@/auth';
 import { Navbar } from '@/components/Navbar';
 import { LandingMockup } from '@/components/LandingMockup';
+import { HowItWorks } from '@/components/HowItWorks';
 import { FeatureCard } from '@/components/FeatureCard';
 
 const FEATURES = [
@@ -74,6 +75,9 @@ export default async function Home() {
         <section className="w-full max-w-4xl pt-4">
           <LandingMockup />
         </section>
+
+        {/* How It Works */}
+        <HowItWorks />
 
         {/* Features */}
         <section className="w-full border-t border-zinc-900 pt-16 space-y-8">
