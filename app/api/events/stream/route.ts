@@ -1,5 +1,6 @@
 import { db } from '@/lib/db';
 import { auth } from '@/auth';
+import { redis } from '@/lib/redis';
 
 export const runtime = 'edge';
 
@@ -45,6 +46,7 @@ export async function GET(req: Request) {
     return new Response('Unauthorized', { status: 401 });
   }
 
+  const isCliRequest = !session?.user?.id;
   const lastEventId = req.headers.get('last-event-id');
   const encoder = new TextEncoder();
 
@@ -58,6 +60,8 @@ export async function GET(req: Request) {
       send('connected');
 
       let cursorTimestamp: string | null = null;
+      let lastRedisCheck = 0;
+      let lastCliStatus: boolean | null = null;
 
       if (lastEventId) {
         const rows = await db`
@@ -82,6 +86,24 @@ export async function GET(req: Request) {
 
       while (true) {
         try {
+          if (isCliRequest) {
+            // Heartbeat: set CLI as active for 10 seconds
+            await redis.set(`project:${projectId}:cli-active`, 'true', { ex: 10 });
+          } else {
+            // Browser: check if CLI is active every 6 seconds
+            const now = Date.now();
+            if (now - lastRedisCheck > 6000) {
+              const redisVal = await redis.get(`project:${projectId}:cli-active`);
+              const active = redisVal === 'true' || redisVal === true;
+              lastRedisCheck = now;
+
+              if (active !== lastCliStatus) {
+                lastCliStatus = active;
+                send(JSON.stringify({ type: 'cli-status', active }));
+              }
+            }
+          }
+
           const rows = cursorTimestamp
             ? await db`
                 SELECT id, method, headers, body, raw_body, received_at

@@ -16,6 +16,7 @@ export function EventFeed({
   const [events, setEvents] = useState<WebhookEvent[]>([]);
   const [searchResults, setSearchResults] = useState<WebhookEvent[] | null>(null);
   const [connected, setConnected] = useState(false);
+  const [cliConnected, setCliConnected] = useState(false);
   const [selectedId, setSelectedId] = useState<string | null>(null);
 
   // Compare mode state
@@ -26,18 +27,30 @@ export function EventFeed({
     const es = new EventSource(`/api/events/stream?projectId=${projectId}`);
 
     es.onopen = () => setConnected(true);
-    es.onerror = () => setConnected(false);
+    es.onerror = () => {
+      setConnected(false);
+      setCliConnected(false);
+    };
 
     es.onmessage = (e) => {
       if (e.data === 'connected') {
         setConnected(true);
         return;
       }
-      const event: WebhookEvent = JSON.parse(e.data);
-      setEvents((prev) => {
-        if (prev.some((p) => p.id === event.id)) return prev;
-        return [event, ...prev].slice(0, 200);
-      });
+      try {
+        const parsed = JSON.parse(e.data);
+        if (parsed && parsed.type === 'cli-status') {
+          setCliConnected(parsed.active);
+          return;
+        }
+        const event: WebhookEvent = parsed;
+        setEvents((prev) => {
+          if (prev.some((p) => p.id === event.id)) return prev;
+          return [event, ...prev].slice(0, 200);
+        });
+      } catch (err) {
+        console.error('Failed to parse incoming SSE message', err);
+      }
     };
 
     return () => es.close();
@@ -93,10 +106,28 @@ export function EventFeed({
                 Search Results
               </div>
             ) : (
-              <>
-                <StatusIndicator connected={connected} />
-                {connected ? 'Live' : 'Reconnecting\u2026'}
-              </>
+              <div className="flex items-center gap-3">
+                <div className="flex items-center gap-1.5">
+                  <StatusIndicator connected={connected} />
+                  <span>{connected ? 'Live' : 'Reconnecting\u2026'}</span>
+                </div>
+                <div className="h-3 w-px bg-zinc-800" />
+                <div className="flex items-center gap-1.5">
+                  <span className="relative flex h-1.5 w-1.5">
+                    {cliConnected && (
+                      <span className="absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75 animate-ping" />
+                    )}
+                    <span
+                      className={`relative inline-flex h-1.5 w-1.5 rounded-full ${
+                        cliConnected ? 'bg-emerald-500' : 'bg-zinc-600'
+                      }`}
+                    />
+                  </span>
+                  <span className={`text-xs font-mono tracking-tight transition-colors duration-200 ${cliConnected ? 'text-emerald-400 font-semibold' : 'text-zinc-500'}`}>
+                    {cliConnected ? 'CLI Connected' : 'CLI Offline'}
+                  </span>
+                </div>
+              </div>
             )}
           </div>
           {displayedEvents.length >= 2 && (

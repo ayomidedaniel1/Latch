@@ -25,14 +25,16 @@ const MAGENTA = '\x1b[35m';
 
 function printHelp() {
   console.log(`
-${BOLD}${GREEN}Latch CLI (Local Tunnel Proxy)${RESET}
-Secure real-time local webhook forwarding without ngrok.
+${BOLD}${GREEN}Latch CLI (Local Tunnel Proxy & Replay)${RESET}
+Secure real-time local webhook forwarding and manual event replaying without ngrok.
 
 ${BOLD}Usage:${RESET}
   npx @ayomidedaniel/latch-cli listen <projectId> --forward-to <localUrl> [options]
+  npx @ayomidedaniel/latch-cli replay <eventId> --forward-to <localUrl> [options]
 
 ${BOLD}Arguments:${RESET}
-  projectId                The UUID of your Latch project.
+  projectId                The UUID of your Latch project (for listen).
+  eventId                  The UUID of the webhook event to replay (for replay).
 
 ${BOLD}Options:${RESET}
   -f, --forward-to <url>   The local endpoint to forward webhooks to (e.g. http://localhost:3000/api/webhook).
@@ -42,13 +44,15 @@ ${BOLD}Options:${RESET}
 
 ${BOLD}Examples:${RESET}
   npx @ayomidedaniel/latch-cli listen d3b07384-d113-4956-a5db-e1c725a34e32 -f http://localhost:3000/api/webhook -t sec_token
-  npx @ayomidedaniel/latch-cli listen d3b07384-d113-4956-a5db-e1c725a34e32 --forward-to http://localhost:8080/stripe-hooks
+  npx @ayomidedaniel/latch-cli replay a1b2c3d4-e5f6-7a8b-9c0d-1e2f3a4b5c6d -f http://localhost:3000/api/webhook -t sec_token
 `);
 }
 
 function parseArgs() {
   const args = process.argv.slice(2);
+  let command = '';
   let projectId = '';
+  let eventId = '';
   let forwardTo = '';
   let token = process.env.LATCH_TOKEN || '';
   let apiUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
@@ -58,17 +62,23 @@ function parseArgs() {
     process.exit(0);
   }
 
-  // Expecting command structure: listen <projectId>
-  if (args[0] === 'listen') {
+  // Expecting command structure: <listen|replay> <id>
+  command = args[0] || '';
+  if (command === 'listen') {
     projectId = args[1] || '';
+  } else if (command === 'replay') {
+    eventId = args[1] || '';
   } else {
-    console.error(`${RED}Error: Unknown command. The only supported command is 'listen'.${RESET}`);
+    console.error(`${RED}Error: Unknown command. Supported commands are 'listen' and 'replay'.${RESET}`);
     printHelp();
     process.exit(1);
   }
 
-  if (!projectId) {
-    console.error(`${RED}Error: Missing required argument 'projectId'.${RESET}`);
+  const id = command === 'listen' ? projectId : eventId;
+  const idType = command === 'listen' ? 'projectId' : 'eventId';
+
+  if (!id) {
+    console.error(`${RED}Error: Missing required argument '${idType}'.${RESET}`);
     printHelp();
     process.exit(1);
   }
@@ -92,7 +102,7 @@ function parseArgs() {
     process.exit(1);
   }
 
-  return { projectId, forwardTo, token, apiUrl };
+  return { command, projectId, eventId, forwardTo, token, apiUrl };
 }
 
 async function forwardWebhook(event: WebhookEvent, forwardTo: string) {
@@ -233,13 +243,57 @@ async function connectSSE(projectId: string, token: string, apiUrl: string, forw
 }
 
 async function main() {
-  const { projectId, forwardTo, token, apiUrl } = parseArgs();
+  const { command, projectId, eventId, forwardTo, token, apiUrl } = parseArgs();
   
   if (!token) {
-    console.warn(`${YELLOW}Warning: No CLI token provided. If the project requires authentication, connection will fail.${RESET}`);
+    console.warn(`${YELLOW}Warning: No CLI token provided. If the project requires authentication, execution will fail.${RESET}`);
   }
 
-  await connectSSE(projectId, token, apiUrl, forwardTo);
+  if (command === 'listen') {
+    await connectSSE(projectId, token, apiUrl, forwardTo);
+  } else if (command === 'replay') {
+    console.log(`${BOLD}${CYAN}🚀 Starting Latch CLI Local Replay...${RESET}`);
+    console.log(`${DIM}Event ID:${RESET}     ${eventId}`);
+    console.log(`${DIM}Forward to:${RESET}   ${forwardTo}`);
+    console.log(`${DIM}Latch server:${RESET} ${apiUrl}\n`);
+
+    try {
+      const url = new URL(`/api/events/detail`, apiUrl);
+      url.searchParams.set('eventId', eventId);
+      if (token) {
+        url.searchParams.set('token', token);
+      }
+
+      const headers: Record<string, string> = {
+        'Accept': 'application/json',
+      };
+
+      if (token) {
+        headers['Authorization'] = `Bearer ${token}`;
+      }
+
+      const response = await fetch(url.toString(), { headers });
+
+      if (response.status === 401) {
+        console.error(`\n${RED}${BOLD}[Error] Unauthorized (401).${RESET}`);
+        console.error(`${RED}Your CLI token is invalid. Check the project dashboard to copy your latest token.${RESET}`);
+        process.exit(1);
+      }
+
+      if (!response.ok) {
+        const text = await response.text().catch(() => '');
+        throw new Error(`HTTP ${response.status} - ${text || response.statusText}`);
+      }
+
+      const event: WebhookEvent = await response.json();
+      await forwardWebhook(event, forwardTo);
+      console.log(`\n${GREEN}✔ Replay completed.${RESET}`);
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : String(err);
+      console.error(`\n${RED}Replay execution failed: ${msg}${RESET}`);
+      process.exit(1);
+    }
+  }
 }
 
 main().catch((err) => {
