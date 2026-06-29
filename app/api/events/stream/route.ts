@@ -87,7 +87,7 @@ export async function GET(req: Request) {
       while (true) {
         try {
           if (isCliRequest) {
-            // Heartbeat: set CLI as active for 10 seconds
+            // set CLI as active for 10 seconds
             await redis.set(`project:${projectId}:cli-active`, 'true', { ex: 10 });
           } else {
             // Browser: check if CLI is active every 6 seconds

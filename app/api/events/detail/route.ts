@@ -22,7 +22,7 @@ export async function GET(req: Request) {
 
   let authorized = false;
 
-  // 1. Authenticate via NextAuth User Session (for browser clients if needed)
+  // Authenticate via NextAuth User Session
   const session = await auth();
   if (session?.user?.id) {
     const projectRows = await db`
@@ -33,7 +33,7 @@ export async function GET(req: Request) {
     }
   }
 
-  // 2. Authenticate via Project CLI Token (for CLI client calls)
+  // Authenticate via Project CLI Token
   if (!authorized) {
     const authHeader = req.headers.get('authorization');
     let token = authHeader?.startsWith('Bearer ') ? authHeader.substring(7).trim() : null;
