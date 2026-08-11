@@ -47,15 +47,39 @@ export default async function DashboardPage() {
           </div>
         </div>
 
+        {/* Onboarding Banner: shown only when user has no projects */}
+        {projects.length === 0 && (
+          <div className="rounded-2xl border border-zinc-900 bg-zinc-950/40 backdrop-blur-md p-6 relative overflow-hidden">
+            <h2 className="text-lg font-bold text-white mb-4">Get started</h2>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+              <div className="flex gap-3">
+                <span className="flex items-center justify-center h-7 w-7 rounded-lg bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-xs font-bold font-mono shrink-0">1</span>
+                <p className="text-xs text-zinc-400 leading-relaxed">Create a project below. Pick any name (you can change it later).</p>
+              </div>
+              <div className="flex gap-3">
+                <span className="flex items-center justify-center h-7 w-7 rounded-lg bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-xs font-bold font-mono shrink-0">2</span>
+                <p className="text-xs text-zinc-400 leading-relaxed">Copy the Ingest URL that Latch gives you. Paste it into your webhook provider&apos;s settings (Stripe, GitHub, Shopify, or anything that sends HTTP POST requests).</p>
+              </div>
+              <div className="flex gap-3">
+                <span className="flex items-center justify-center h-7 w-7 rounded-lg bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-xs font-bold font-mono shrink-0">3</span>
+                <p className="text-xs text-zinc-400 leading-relaxed">That&apos;s it. Webhooks show up here in real time. You can inspect payloads, compare events, or replay them to your local server.</p>
+              </div>
+            </div>
+            <div className="mt-5 pt-4 border-t border-zinc-900/60">
+              <Link href="/docs" className="text-xs text-emerald-400 hover:text-emerald-300 font-semibold transition-colors">
+                Read the full guide &rarr;
+              </Link>
+            </div>
+          </div>
+        )}
+
         {/* Dashboard Grid */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start">
           {/* Left: Project Creation Card */}
           <div className="lg:col-span-1 rounded-2xl border border-zinc-900 bg-zinc-950/40 backdrop-blur-md p-6 shadow-2xl relative overflow-hidden">
-            <div className="absolute top-0 inset-x-0 h-px bg-gradient-to-r from-transparent via-emerald-500/25 to-transparent" />
-            
             <h2 className="text-lg font-bold text-white mb-2">Create a New Project</h2>
             <p className="text-xs text-zinc-400 leading-relaxed mb-6">
-              Establish a permanent webhook proxy ledger. Swap your third-party webhook URL with Latch, and replay payloads at will.
+              Each project gets its own Ingest URL. Point a webhook provider at it and Latch captures everything.
             </p>
 
             <form action={createProject} className="space-y-4">
@@ -79,7 +103,7 @@ export default async function DashboardPage() {
                   className="w-full rounded-lg border border-zinc-900 bg-zinc-950 px-3 py-2 text-sm text-zinc-100 placeholder:text-zinc-500 focus:outline-none focus:border-zinc-800 transition-all font-mono"
                 />
                 <p className="text-[10px] text-zinc-500 leading-normal mt-1">
-                  Local server endpoint where Latch will forward webhooks during Replay.
+                  Where Latch sends the payload when you click Replay. Usually your local dev server.
                 </p>
               </div>
 
@@ -97,9 +121,12 @@ export default async function DashboardPage() {
             <h2 className="text-sm font-mono font-semibold text-zinc-400 uppercase tracking-widest mb-4">Your Webhook Tunnels</h2>
 
             {projects.length === 0 ? (
-              <div className="rounded-2xl border border-dashed border-zinc-900 p-12 text-center">
+              <div className="rounded-2xl border border-dashed border-zinc-900 p-12 text-center space-y-3">
+                <svg className="mx-auto h-8 w-8 text-zinc-700" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v6m3-3H9m12 0a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
                 <p className="text-sm text-zinc-500 leading-relaxed max-w-sm mx-auto">
-                  You have not created any projects yet. Enter a name on the left to spawn your first webhook ledger and copy your proxy URLs.
+                  No projects yet. Create one using the form on the left to get your Ingest URL.
                 </p>
               </div>
             ) : (

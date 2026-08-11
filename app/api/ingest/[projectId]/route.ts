@@ -30,10 +30,10 @@ export async function POST(
   // Push to Redis queue
   await redis.lpush('webhook-queue', JSON.stringify(payload));
 
-  // Return 200 immediately — payload is safely in Redis, never block on downstream calls
+  // Return 200 immediately: payload is safely in Redis, never block on downstream calls
   const response = Response.json({ received: true }, { status: 200 });
 
-  // Trigger the consumer (fire-and-forget — never await, never crash the ingest)
+  // Trigger the consumer (fire-and-forget: never await, never crash the ingest)
   if (env.isDev) {
     fetch(`${env.appUrl}/api/process`, { method: 'POST' }).catch(() => { });
   } else {

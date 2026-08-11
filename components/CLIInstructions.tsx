@@ -150,6 +150,32 @@ export function CLIInstructions({
             )}
           </div>
         </div>
+
+        {/* What is this? explainer */}
+        <details className="group">
+          <summary className="text-[11px] text-zinc-500 hover:text-zinc-300 cursor-pointer transition-colors font-medium select-none">
+            What is this?
+          </summary>
+          <div className="mt-3 space-y-2.5 text-xs text-zinc-500 leading-relaxed pl-1 border-l-2 border-zinc-900 ml-0.5">
+            <p className="pl-3">
+              The CLI is optional. It forwards incoming webhooks from Latch to a URL on your local machine so you can test against real payloads without exposing localhost to the internet.
+            </p>
+            <p className="pl-3">
+              <span className="text-zinc-400 font-medium">Without the CLI</span>: you can still see, search, diff, and replay webhooks from the dashboard. Replay sends the event to whatever Destination URL you set on the project.
+            </p>
+            <p className="pl-3">
+              <span className="text-zinc-400 font-medium">With the CLI</span>: events get forwarded to your local server the moment they arrive. Similar to ngrok, but it connects to the events Latch already captured.
+            </p>
+            <p className="pl-3">
+              <span className="text-zinc-400 font-medium">To run it</span>: copy the command above and paste it in your terminal. It uses <code className="text-zinc-400 bg-zinc-900 px-1 rounded">npx</code>, so there&apos;s nothing to install globally.
+            </p>
+            <div className="pl-3 pt-1">
+              <a href="/docs#cli" className="text-[11px] text-emerald-400 hover:text-emerald-300 font-semibold transition-colors">
+                Full CLI docs &rarr;
+              </a>
+            </div>
+          </div>
+        </details>
       </div>
 
       <ConfirmationModal

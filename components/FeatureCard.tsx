@@ -6,21 +6,21 @@ type FeatureCardProps = {
 
 export function FeatureCard({ title, description, status }: FeatureCardProps) {
   return (
-    <div className="border border-zinc-900 bg-zinc-950 p-6 rounded-xl space-y-2.5">
+    <div className="border border-latch-border bg-latch-card hover:border-latch-border-hover transition-all duration-200 p-6 rounded-xl space-y-3">
       <div className="flex items-center justify-between">
-        <h3 className="font-semibold text-white">{title}</h3>
+        <h3 className="text-base font-semibold text-latch-primary">{title}</h3>
         {status === 'live' ? (
-          <span className="text-[10px] font-semibold text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded border border-emerald-500/20 font-mono flex items-center gap-1">
-            <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 animate-pulse" />
+          <span className="text-xs font-semibold text-latch-mint bg-latch-mint-bg px-2.5 py-0.5 rounded border border-latch-mint-border font-mono flex items-center gap-1.5">
+            <span className="h-1.5 w-1.5 rounded-full bg-latch-mint animate-pulse" />
             Live
           </span>
         ) : (
-          <span className="text-[10px] font-semibold text-zinc-400 bg-zinc-800/50 px-2 py-0.5 rounded border border-zinc-700/30 font-mono">
+          <span className="text-xs font-semibold text-latch-muted bg-latch-card-hover px-2.5 py-0.5 rounded border border-latch-border font-mono">
             Coming Soon
           </span>
         )}
       </div>
-      <p className="text-xs text-zinc-400 leading-relaxed">
+      <p className="text-sm text-latch-secondary leading-relaxed">
         {description}
       </p>
     </div>

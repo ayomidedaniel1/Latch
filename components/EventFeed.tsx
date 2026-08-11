@@ -160,11 +160,40 @@ export function EventFeed({
 
         {/* Event List */}
         {displayedEvents.length === 0 ? (
-          <p className="text-sm text-zinc-500 leading-relaxed">
-            {searchResults !== null
-              ? 'No matching webhooks found for this search query.'
-              : 'No webhooks yet. Point a service at the URL above and they\'ll show up here in real time.'}
-          </p>
+          <div className="rounded-xl border border-zinc-800 bg-zinc-900/30 p-6 space-y-4">
+            {searchResults !== null ? (
+              <p className="text-sm text-zinc-500">No matching webhooks found for this search query.</p>
+            ) : (
+              <>
+                <div className="flex items-center gap-3">
+                  <span className="relative flex h-3 w-3">
+                    <span className="absolute inline-flex h-full w-full rounded-full bg-zinc-500 opacity-50 animate-ping" />
+                    <span className="relative inline-flex h-3 w-3 rounded-full bg-zinc-600" />
+                  </span>
+                  <h3 className="text-sm font-semibold text-zinc-300">No events yet</h3>
+                </div>
+                <p className="text-xs text-zinc-500 leading-relaxed">
+                  Events will show up here as soon as your webhook provider sends one to your Ingest URL.
+                </p>
+                <details className="group">
+                  <summary className="text-[11px] text-zinc-500 hover:text-zinc-300 cursor-pointer transition-colors font-medium select-none">
+                    Not seeing anything?
+                  </summary>
+                  <div className="mt-3 space-y-2 text-xs text-zinc-500 leading-relaxed pl-1">
+                    <p>Check that you pasted the full Ingest URL (including <code className="text-zinc-400 bg-zinc-900 px-1 rounded">/api/ingest/{projectId}</code>) into your provider&apos;s webhook settings.</p>
+                    <p>Some providers won&apos;t send anything until you trigger a test event manually (Stripe has a &quot;Send test webhook&quot; button, for example).</p>
+                    <p>You can also test it yourself:</p>
+                    <div className="rounded-lg border border-zinc-800 bg-zinc-950 p-3 font-mono text-[11px] text-zinc-400 overflow-x-auto whitespace-pre">{`curl -X POST ${typeof window !== 'undefined' ? window.location.origin : 'https://your-domain'}/api/ingest/${projectId} \\
+  -H "Content-Type: application/json" \\
+  -d '{"test": true}'`}</div>
+                  </div>
+                </details>
+                <a href="/docs#troubleshooting" className="inline-block text-[11px] text-emerald-400 hover:text-emerald-300 font-semibold transition-colors mt-1">
+                  Stuck? Check the troubleshooting guide &rarr;
+                </a>
+              </>
+            )}
+          </div>
         ) : (
           <ul className="space-y-1.5">
             {displayedEvents.map((event) => {

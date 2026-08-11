@@ -11,7 +11,7 @@ const STEPS = [
     number: 2,
     title: 'Point Your Webhook',
     description:
-      'Copy your Latch ingest URL and paste it into your provider\'s webhook settings — Stripe, GitHub, Shopify, or any service that sends webhooks.',
+      'Copy your Latch ingest URL and paste it into your provider\'s webhook settings: Stripe, GitHub, Shopify, or any service that sends webhooks.',
     snippet: 'Stripe → Developers → Webhooks → Add endpoint → Paste URL',
     label: 'Provider Setup',
   },
@@ -27,12 +27,12 @@ const STEPS = [
 
 export function HowItWorks() {
   return (
-    <section className="w-full border-t border-zinc-900 pt-16 space-y-8">
+    <section className="w-full border-t border-latch-border pt-16 space-y-8">
       <div className="text-left space-y-2">
-        <h2 className="text-2xl font-bold text-white tracking-tight">
+        <h2 className="text-2xl font-bold text-latch-primary tracking-tight">
           How It Works
         </h2>
-        <p className="text-sm text-zinc-400">
+        <p className="text-sm text-latch-secondary">
           From zero to capturing webhooks in under two minutes.
         </p>
       </div>
@@ -41,34 +41,31 @@ export function HowItWorks() {
         {STEPS.map((step) => (
           <div
             key={step.number}
-            className="relative border border-zinc-900 bg-zinc-950/40 backdrop-blur-sm rounded-xl p-6 flex flex-col justify-between overflow-hidden group hover:border-zinc-800 transition-all"
+            className="relative border border-latch-border bg-latch-card rounded-xl p-6 flex flex-col justify-between overflow-hidden group hover:border-latch-border-hover transition-all"
           >
-            {/* Top gradient accent */}
-            <div className="absolute top-0 inset-x-0 h-px bg-gradient-to-r from-transparent via-emerald-500/25 to-transparent" />
-
             <div className="space-y-4 mb-6">
               {/* Step number badge */}
               <div className="flex items-center gap-3">
-                <span className="flex items-center justify-center h-8 w-8 rounded-lg bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-sm font-bold font-mono">
+                <span className="flex items-center justify-center h-8 w-8 rounded-lg bg-latch-mint-bg border border-latch-mint-border text-latch-mint text-sm font-bold font-mono">
                   {step.number}
                 </span>
-                <h3 className="font-semibold text-white text-sm">
+                <h3 className="font-semibold text-latch-primary text-base">
                   {step.title}
                 </h3>
               </div>
 
               {/* Description */}
-              <p className="text-xs text-zinc-400 leading-relaxed">
+              <p className="text-sm text-latch-secondary leading-relaxed">
                 {step.description}
               </p>
             </div>
 
             {/* Code snippet */}
-            <div className="space-y-1">
-              <span className="text-[9px] font-mono font-semibold text-zinc-500 uppercase tracking-wider">
+            <div className="space-y-1.5">
+              <span className="text-xs font-mono font-semibold text-latch-muted uppercase tracking-wider">
                 {step.label}
               </span>
-              <div className="rounded-lg border border-zinc-900 bg-zinc-950 px-3 py-2.5 font-mono text-[11px] text-zinc-400 overflow-x-auto whitespace-nowrap scrollbar-thin scrollbar-track-transparent scrollbar-thumb-zinc-800">
+              <div className="rounded-lg border border-latch-border bg-latch-bg px-3 py-2.5 font-mono text-xs text-latch-secondary overflow-x-auto whitespace-nowrap">
                 {step.snippet}
               </div>
             </div>

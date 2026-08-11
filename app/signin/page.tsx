@@ -18,10 +18,6 @@ export default async function SignInPage({ searchParams }: PageProps) {
 
   return (
     <div className="min-h-screen flex flex-col items-center justify-center bg-zinc-950 text-zinc-100 relative overflow-hidden">
-      {/* Background gradients for premium glassmorphic feel */}
-      <div className="absolute top-[-20%] left-[-10%] w-[50%] h-[50%] rounded-full bg-emerald-500/10 blur-[120px] pointer-events-none" />
-      <div className="absolute bottom-[-20%] right-[-10%] w-[50%] h-[50%] rounded-full bg-emerald-500/5 blur-[120px] pointer-events-none" />
-
       <div className="w-full max-w-md px-6 z-10">
         {/* Brand/Logo */}
         <div className="flex flex-col items-center mb-8">
@@ -42,8 +38,6 @@ export default async function SignInPage({ searchParams }: PageProps) {
 
         {/* Sign In Card */}
         <div className="rounded-2xl border border-zinc-900 bg-zinc-950/40 backdrop-blur-md p-8 shadow-2xl relative overflow-hidden">
-          {/* Card subtle border light overlay */}
-          <div className="absolute top-0 inset-x-0 h-px bg-linear-to-r from-transparent via-emerald-500/20 to-transparent" />
 
           {error && (
             <div className="mb-6 rounded-lg border border-red-500/20 bg-red-500/10 p-4 text-sm text-red-400">
