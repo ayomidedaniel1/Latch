@@ -1,62 +1,53 @@
-import { db } from '@/lib/db';
-import { auth } from '@/auth';
+import { requireSession } from '@/lib/services/auth-check';
+import { replayEvent, ReplayError } from '@/lib/services/replay';
+import { env } from '@/lib/env';
+import { z } from 'zod';
+
+const replaySchema = z.object({
+  eventId: z.string().uuid('eventId must be a valid UUID'),
+  destinationUrl: z.string().url('destinationUrl must be a valid URL').refine(
+    (url) => {
+      // In local mode, allow localhost — it's the primary workflow
+      if (env.isLocalMode) return true;
+      // In cloud mode, block internal/private addresses to prevent SSRF
+      try {
+        const parsed = new URL(url);
+        const blocked = ['localhost', '127.0.0.1', '0.0.0.0', '::1', '169.254.169.254'];
+        return !blocked.some(h => parsed.hostname === h || parsed.hostname.endsWith('.internal'));
+      } catch { return false; }
+    },
+    { message: 'Destination URL must not target internal/private addresses' }
+  ),
+});
 
 export async function POST(req: Request) {
-  const session = await auth();
-  if (!session?.user?.id) return new Response('Unauthorized', { status: 401 });
+  const session = await requireSession();
+  if (!session) return new Response('Unauthorized', { status: 401 });
 
-  const { eventId, destinationUrl } = await req.json();
-  if (!eventId || !destinationUrl) {
-    return Response.json({ error: 'Missing eventId or destinationUrl' }, { status: 400 });
+  let body: unknown;
+  try {
+    body = await req.json();
+  } catch {
+    return Response.json({ error: 'Invalid JSON body' }, { status: 400 });
   }
 
-  // Fetch the original event using Neon's template literal syntax
-  const rows = await db`
-    SELECT id, project_id, method, headers, raw_body FROM events WHERE id = ${eventId} LIMIT 1
-  `;
-  if (rows.length === 0) {
-    return Response.json({ error: 'Event not found' }, { status: 404 });
-  }
-  const event = rows[0];
-
-  // Verify the event belongs to a project owned by this user
-  const projectRows = await db`
-    SELECT id FROM projects WHERE id = ${event.project_id} AND user_id = ${session.user.id} LIMIT 1
-  `;
-  if (projectRows.length === 0) {
-    return Response.json({ error: 'Unauthorized: Project not owned by user' }, { status: 403 });
+  const parsed = replaySchema.safeParse(body);
+  if (!parsed.success) {
+    return Response.json(
+      { error: 'Validation failed', details: parsed.error.flatten().fieldErrors },
+      { status: 400 }
+    );
   }
 
-  // Build replay headers (exclude host and content-length)
-  const replayHeaders: Record<string, string> = { ...event.headers };
-  delete replayHeaders['host'];
-  delete replayHeaders['content-length'];
-  replayHeaders['x-webhook-replay'] = 'true';
-  replayHeaders['x-webhook-original-id'] = eventId;
-
-  const start = Date.now();
-  let responseStatus: number;
-  let responseBody: string;
+  const { eventId, destinationUrl } = parsed.data;
 
   try {
-    const response = await fetch(destinationUrl, {
-      method: event.method ?? 'POST',
-      headers: replayHeaders,
-      body: event.raw_body,
-    });
-    responseStatus = response.status;
-    responseBody = await response.text();
-  } catch (err: unknown) {
-    responseStatus = 500;
-    responseBody = err instanceof Error ? err.message : String(err);
+    const result = await replayEvent(eventId, destinationUrl, session.userId);
+    return Response.json(result);
+  } catch (err) {
+    if (err instanceof ReplayError) {
+      return Response.json({ error: err.message }, { status: err.statusCode });
+    }
+    throw err;
   }
-  const duration = Date.now() - start;
-
-  // Insert the replay record
-  await db`
-    INSERT INTO replays (event_id, destination_url, response_status, response_body, duration_ms)
-    VALUES (${eventId}, ${destinationUrl}, ${responseStatus}, ${responseBody.slice(0, 10000)}, ${duration})
-  `;
-
-  return Response.json({ status: responseStatus, body: responseBody, duration });
 }

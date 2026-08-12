@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { EventViewer } from './EventViewer';
 import { DiffViewer } from './DiffViewer';
 import { SearchBar } from './SearchBar';
+import { TunnelStatus } from './TunnelStatus';
 import type { WebhookEvent } from '@/lib/types';
 
 export function EventFeed({
@@ -112,21 +113,7 @@ export function EventFeed({
                   <span>{connected ? 'Live' : 'Reconnecting\u2026'}</span>
                 </div>
                 <div className="h-3 w-px bg-zinc-800" />
-                <div className="flex items-center gap-1.5">
-                  <span className="relative flex h-1.5 w-1.5">
-                    {cliConnected && (
-                      <span className="absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75 animate-ping" />
-                    )}
-                    <span
-                      className={`relative inline-flex h-1.5 w-1.5 rounded-full ${
-                        cliConnected ? 'bg-emerald-500' : 'bg-zinc-600'
-                      }`}
-                    />
-                  </span>
-                  <span className={`text-xs font-mono tracking-tight transition-colors duration-200 ${cliConnected ? 'text-emerald-400 font-semibold' : 'text-zinc-500'}`}>
-                    {cliConnected ? 'CLI Connected' : 'CLI Offline'}
-                  </span>
-                </div>
+                <TunnelStatus cliConnected={cliConnected} />
               </div>
             )}
           </div>

@@ -1,6 +1,6 @@
 import { readFileSync, existsSync } from 'fs';
 import { join } from 'path';
-import { neon } from '@neondatabase/serverless';
+import pg from 'pg';
 
 async function main() {
   const envLocalPath = join(process.cwd(), '.env.local');
@@ -18,22 +18,30 @@ async function main() {
     }
   }
 
-  const connectionString = process.env.DATABASE_URL_UNPOOLED;
+  const connectionString = process.env.DATABASE_URL;
+
   if (!connectionString) {
-    throw new Error('DATABASE_URL_UNPOOLED is required for migrations');
+    throw new Error('DATABASE_URL is required for migrations');
   }
 
-  const sql = neon(connectionString);
-  const schema = readFileSync(join(process.cwd(), 'lib/schema.sql'), 'utf-8');
+  console.log('🚀 Running database migrations...');
 
+  const schema = readFileSync(join(process.cwd(), 'lib/schema.sql'), 'utf-8');
   const statements = schema
     .split(';')
     .map(s => s.trim())
     .filter(s => s.length > 0);
 
-  for (const statement of statements) {
-    await sql.query(statement);
-    console.log('Executed:', statement.slice(0, 60) + '...');
+  const client = new pg.Client({ connectionString });
+  await client.connect();
+
+  try {
+    for (const statement of statements) {
+      await client.query(statement);
+      console.log('Executed:', statement.slice(0, 60).replace(/\n/g, ' ') + '...');
+    }
+  } finally {
+    await client.end();
   }
 
   console.log('\nMigration complete.');

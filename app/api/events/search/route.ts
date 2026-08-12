@@ -1,9 +1,10 @@
-import { db } from '@/lib/db';
-import { auth } from '@/auth';
+import { requireSession } from '@/lib/services/auth-check';
+import * as projectsRepo from '@/lib/repositories/projects';
+import * as eventsRepo from '@/lib/repositories/events';
 
 export async function GET(req: Request) {
-  const session = await auth();
-  if (!session?.user?.id) {
+  const session = await requireSession();
+  if (!session) {
     return new Response('Unauthorized', { status: 401 });
   }
 
@@ -14,48 +15,16 @@ export async function GET(req: Request) {
   }
 
   const query = url.searchParams.get('q') || '';
+  if (query.length > 500) {
+    return Response.json({ error: 'Query too long (max 500 chars)' }, { status: 400 });
+  }
 
   // Verify the project belongs to the user
-  const projectRows = await db`
-    SELECT id FROM projects WHERE id = ${projectId} AND user_id = ${session.user.id} LIMIT 1
-  `;
-  if (projectRows.length === 0) {
+  const project = await projectsRepo.verifyOwnership(projectId, session.userId);
+  if (!project) {
     return new Response('Unauthorized', { status: 401 });
   }
 
-  const matchPattern = `%${query}%`;
-  const isKeyPath = /^[a-zA-Z0-9_]+(?:\.[a-zA-Z0-9_]+)*$/.test(query);
-
-  let rows;
-  if (isKeyPath && query.length > 0) {
-    const jsonPath = `$.${query}`;
-    rows = await db`
-      SELECT id, method, headers, body, raw_body, received_at
-      FROM events
-      WHERE project_id = ${projectId}
-        AND (
-          body::text ILIKE ${matchPattern}
-          OR headers::text ILIKE ${matchPattern}
-          OR raw_body ILIKE ${matchPattern}
-          OR (body IS NOT NULL AND jsonb_path_exists(body, ${jsonPath}))
-        )
-      ORDER BY received_at DESC
-      LIMIT 50
-    `;
-  } else {
-    rows = await db`
-      SELECT id, method, headers, body, raw_body, received_at
-      FROM events
-      WHERE project_id = ${projectId}
-        AND (
-          body::text ILIKE ${matchPattern}
-          OR headers::text ILIKE ${matchPattern}
-          OR raw_body ILIKE ${matchPattern}
-        )
-      ORDER BY received_at DESC
-      LIMIT 50
-    `;
-  }
-
+  const rows = await eventsRepo.search(projectId, query);
   return Response.json(rows);
 }

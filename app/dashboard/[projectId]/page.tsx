@@ -1,4 +1,4 @@
-import { db } from '@/lib/db';
+import * as projectsRepo from '@/lib/repositories/projects';
 import { EventFeed } from '@/components/EventFeed';
 import { IngestUrl } from '@/components/IngestUrl';
 import { notFound } from 'next/navigation';
@@ -20,11 +20,7 @@ export default async function ProjectPage({
 
   const { projectId } = await params;
 
-  const rows = await db`
-    SELECT id, name, destination_url, cli_token FROM projects WHERE id = ${projectId} AND user_id = ${userId} LIMIT 1
-  `;
-  const project = rows[0];
-
+  const project = await projectsRepo.verifyOwnership(projectId, userId);
   if (!project) notFound();
 
   // Bind the action to the projectId

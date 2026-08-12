@@ -1,17 +1,14 @@
 import NextAuth from 'next-auth';
 import GitHub from 'next-auth/providers/github';
 import PostgresAdapter from '@auth/pg-adapter';
-import { Pool } from '@neondatabase/serverless';
-import { env } from '@/lib/env';
-
-const pool = new Pool({ connectionString: env.databaseUrlUnpooled });
+import { pool } from '@/lib/db-local';
 
 export const { handlers, auth, signIn, signOut } = NextAuth({
   adapter: PostgresAdapter(pool),
   providers: [
     GitHub({
-      clientId: env.authGithubId,
-      clientSecret: env.authGithubSecret,
+      clientId: process.env.AUTH_GITHUB_ID!,
+      clientSecret: process.env.AUTH_GITHUB_SECRET!,
     }),
   ],
   pages: {

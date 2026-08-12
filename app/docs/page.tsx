@@ -183,6 +183,10 @@ export default async function DocsPage() {
               </thead>
               <tbody className="text-zinc-400 divide-y divide-zinc-900">
                 <tr>
+                  <td className="px-4 py-2 font-mono text-[11px] text-zinc-300">tunnel &lt;projectId&gt;</td>
+                  <td className="px-4 py-2">Opens a persistent tunnel connection and forwards webhooks to your local URL in real time. Built-in alternative to ngrok.</td>
+                </tr>
+                <tr>
                   <td className="px-4 py-2 font-mono text-[11px] text-zinc-300">listen &lt;projectId&gt;</td>
                   <td className="px-4 py-2">Connects to the project&apos;s event stream and forwards each incoming webhook to your local URL.</td>
                 </tr>
@@ -249,29 +253,29 @@ export default async function DocsPage() {
         <section id="self-host" className="space-y-4 scroll-mt-24">
           <h2 className="text-xl font-bold text-white">Self-Hosting</h2>
           <p className="text-sm text-zinc-400 leading-relaxed">
-            Latch is a standard Next.js app. You need three external services to run it:
+            Latch is a standard Next.js app. You need three things to run it:
           </p>
           <ul className="text-xs text-zinc-400 leading-relaxed space-y-1.5 list-disc list-inside">
-            <li><span className="text-zinc-300">Neon Postgres</span>: for storing projects, events, and replays</li>
-            <li><span className="text-zinc-300">Upstash Redis + QStash</span>: for the async ingestion queue and consumer trigger</li>
+            <li><span className="text-zinc-300">PostgreSQL</span>: local instance or any hosted PostgreSQL (for storing projects, events, and replays)</li>
+            <li><span className="text-zinc-300">Redis</span>: local instance or any hosted Redis (for the async ingestion queue and real-time pub/sub)</li>
             <li><span className="text-zinc-300">GitHub OAuth app</span>: for authentication</li>
           </ul>
           <p className="text-xs text-zinc-400 leading-relaxed pt-1">
-            Set the following environment variables, run the migration script, and deploy to Vercel (or anywhere that supports Next.js):
+            Set the following environment variables, run the migration, start the worker, and deploy:
           </p>
           <div className="rounded-lg border border-zinc-800 bg-zinc-950 p-3 font-mono text-[11px] text-zinc-400 overflow-x-auto whitespace-pre leading-relaxed">
-{`DATABASE_URL=               # Neon pooled connection string
-DATABASE_URL_UNPOOLED=      # Neon direct connection (for migrations)
-UPSTASH_REDIS_REST_URL=
-UPSTASH_REDIS_REST_TOKEN=
-QSTASH_TOKEN=
-QSTASH_URL=
-QSTASH_CURRENT_SIGNING_KEY=
-QSTASH_NEXT_SIGNING_KEY=
+{`DATABASE_URL=               # PostgreSQL connection string
+LOCAL_REDIS_URL=            # Redis connection string
 NEXT_PUBLIC_APP_URL=        # Your deployed URL
 AUTH_SECRET=                # openssl rand -base64 32
 AUTH_GITHUB_ID=
 AUTH_GITHUB_SECRET=`}
+          </div>
+          <div className="rounded-lg border border-zinc-800 bg-zinc-950 p-3 font-mono text-[11px] text-zinc-400 overflow-x-auto whitespace-pre leading-relaxed mt-2">
+{`pnpm install
+pnpm migrate          # Create tables
+pnpm dev              # Start the app
+pnpm worker           # Start the queue consumer (separate terminal)`}
           </div>
           <p className="text-xs text-zinc-400 leading-relaxed pt-1">
             Full setup instructions are in the{' '}

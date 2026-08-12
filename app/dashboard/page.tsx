@@ -1,4 +1,4 @@
-import { db } from '@/lib/db';
+import * as projectsRepo from '@/lib/repositories/projects';
 import Link from 'next/link';
 import { createProject } from './actions';
 import { IngestUrl } from '@/components/IngestUrl';
@@ -13,12 +13,7 @@ export default async function DashboardPage() {
     redirect('/signin');
   }
 
-  const projects = await db`
-    SELECT id, name, destination_url, created_at
-    FROM projects
-    WHERE user_id = ${userId}
-    ORDER BY created_at DESC
-  `;
+  const projects = await projectsRepo.findByUserId(userId);
 
   return (
     <div className="min-h-screen bg-zinc-950 text-zinc-100 flex flex-col font-sans selection:bg-emerald-500/30 selection:text-emerald-400">

@@ -129,3 +129,17 @@ body {
 .stagger-children > *:nth-child(5) { animation-delay: 240ms; }
 .stagger-children > *:nth-child(6) { animation-delay: 300ms; }
 
+/* CTA glow effect */
+@keyframes cta-glow {
+  0%, 100% {
+    box-shadow: 0 0 8px rgba(16, 229, 153, 0.15), 0 0 24px rgba(16, 229, 153, 0.05);
+  }
+  50% {
+    box-shadow: 0 0 16px rgba(16, 229, 153, 0.3), 0 0 40px rgba(16, 229, 153, 0.1);
+  }
+}
+
+.cta-glow {
+  animation: cta-glow 3s ease-in-out infinite;
+}
+

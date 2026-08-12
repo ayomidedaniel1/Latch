@@ -6,18 +6,18 @@ export async function GET() {
 
   try {
     await db`SELECT 1`;
-    results.neon = 'ok';
-  } catch (err) {
-    results.neon = `error: ${String(err)}`;
+    results.postgres = 'ok';
+  } catch {
+    results.postgres = 'error';
   }
 
   try {
     await redis.ping();
     results.redis = 'ok';
-  } catch (err) {
-    results.redis = `error: ${String(err)}`;
+  } catch {
+    results.redis = 'error';
   }
 
   const healthy = Object.values(results).every(v => v === 'ok');
-  return Response.json(results, { status: healthy ? 200 : 500 });
+  return Response.json(results, { status: healthy ? 200 : 503 });
 }

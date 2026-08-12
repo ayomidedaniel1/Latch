@@ -1,6 +1,6 @@
 'use server';
 
-import { db } from '@/lib/db';
+import * as projectsRepo from '@/lib/repositories/projects';
 import { revalidatePath } from 'next/cache';
 import { auth } from '@/auth';
 import { redirect } from 'next/navigation';
@@ -19,10 +19,7 @@ export async function createProject(formData: FormData) {
     throw new Error('Project name is required');
   }
 
-  await db`
-    INSERT INTO projects (user_id, name, destination_url)
-    VALUES (${userId}, ${name}, ${destinationUrl})
-  `;
+  await projectsRepo.create(userId, name, destinationUrl);
 
   revalidatePath('/dashboard');
 }
@@ -42,18 +39,12 @@ export async function updateProject(projectId: string, formData: FormData) {
   }
 
   // Verify ownership before updating
-  const projectRows = await db`
-    SELECT id FROM projects WHERE id = ${projectId} AND user_id = ${userId} LIMIT 1
-  `;
-  if (projectRows.length === 0) {
+  const project = await projectsRepo.verifyOwnership(projectId, userId);
+  if (!project) {
     throw new Error('Unauthorized: Project not owned by user');
   }
 
-  await db`
-    UPDATE projects
-    SET name = ${name}, destination_url = ${destinationUrl}
-    WHERE id = ${projectId}
-  `;
+  await projectsRepo.update(projectId, name, destinationUrl);
 
   revalidatePath(`/dashboard/${projectId}`);
   revalidatePath('/dashboard');
@@ -67,17 +58,12 @@ export async function deleteProject(projectId: string) {
   }
 
   // Verify ownership before deleting
-  const projectRows = await db`
-    SELECT id FROM projects WHERE id = ${projectId} AND user_id = ${userId} LIMIT 1
-  `;
-  if (projectRows.length === 0) {
+  const project = await projectsRepo.verifyOwnership(projectId, userId);
+  if (!project) {
     throw new Error('Unauthorized: Project not owned by user');
   }
 
-  await db`
-    DELETE FROM projects
-    WHERE id = ${projectId}
-  `;
+  await projectsRepo.remove(projectId);
 
   revalidatePath('/dashboard');
   redirect('/dashboard');
@@ -91,19 +77,12 @@ export async function regenerateCliToken(projectId: string) {
   }
 
   // Verify ownership before updating
-  const projectRows = await db`
-    SELECT id FROM projects WHERE id = ${projectId} AND user_id = ${userId} LIMIT 1
-  `;
-  if (projectRows.length === 0) {
+  const project = await projectsRepo.verifyOwnership(projectId, userId);
+  if (!project) {
     throw new Error('Unauthorized: Project not owned by user');
   }
 
-  await db`
-    UPDATE projects
-    SET cli_token = gen_random_uuid()
-    WHERE id = ${projectId}
-  `;
+  await projectsRepo.regenerateCliToken(projectId);
 
   revalidatePath(`/dashboard/${projectId}`);
 }
-
