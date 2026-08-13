@@ -102,10 +102,6 @@ export default async function Home() {
           </div>
 
           <AccordionGroup className="space-y-3 max-w-3xl mx-auto stagger-children text-left">
-            <AccordionItem question="What is a webhook?">
-              A webhook is an HTTP request a third-party service sends to your server when something happens: a payment goes through, a commit is pushed, an order is placed. Latch captures those requests so you can inspect and replay them.
-            </AccordionItem>
-
             <AccordionItem question="What providers work with Latch?">
               Anything that sends an HTTP POST to a URL. Stripe, GitHub, Shopify, Twilio, Clerk, custom backends. If it sends webhooks, Latch can capture them.
             </AccordionItem>
