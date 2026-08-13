@@ -29,11 +29,8 @@ export function Navbar({
             height={26}
             className="rounded-md transition-transform group-hover:scale-105"
           />
-          <span className="font-semibold text-lg tracking-tight text-latch-primary flex items-center gap-1.5">
+          <span className="font-semibold text-lg tracking-tight text-latch-primary">
             Latch
-            <span className="text-[10px] font-mono font-bold bg-latch-mint-bg text-latch-mint border border-latch-mint-border px-1.5 py-0.2 rounded">
-              v1.0
-            </span>
           </span>
         </Link>
 
