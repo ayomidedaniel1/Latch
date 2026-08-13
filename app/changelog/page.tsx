@@ -11,13 +11,22 @@ const RELEASES = [
   {
     version: 'v1.0.0',
     date: 'August 2026',
-    title: 'Local-First Engine, Built-in Tunnel Relay & Structured Logging',
+    title: 'Built-in SSE Tunnel Relay & Sub-10ms Real-Time Delivery',
     description:
-      'Major milestone release introducing zero-config local execution, native PostgreSQL TCP pooling, BLPOP Redis queue consumer, built-in SSE tunnel relay, and Pino structured logging.',
+      'Major milestone release introducing zero-config local tunneling without ngrok, and sub-10ms pub/sub real-time streaming.',
     highlights: [
       '🚀 Built-in SSE Tunnel Relay: Forward webhooks to localhost without ngrok or Cloudflare.',
-      '⚡ Sub-50ms Async Ingestion: Immediate HTTP 200 return on ingest with background BLPOP worker draining.',
       '⚡ Sub-10ms Real-Time Delivery: Local Redis Pub/Sub streams incoming events to dashboard and CLI instantly.',
+    ],
+  },
+  {
+    version: 'v0.9.0',
+    date: 'July 2026',
+    title: 'Core Webhook Ledger Engine & Async Ingestion Pipeline',
+    description:
+      'Initial release of the core Latch webhook engine: permanent PostgreSQL event ledger, Redis queueing, and Auth.js integration.',
+    highlights: [
+      '⚡ Sub-50ms Async Ingestion: Immediate HTTP 200 return on ingest with background BLPOP worker draining.',
       '🔒 Security & Validation: Strict Zod parameter parsing, UUID checks, and cloud-mode SSRF protection.',
       '📊 Pino Structured Logging: High-performance JSON log aggregation for production readiness.',
       '🛡 Route Protection: Auth.js v5 route protection middleware for dashboard routes.',
