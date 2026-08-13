@@ -3,7 +3,6 @@ import Image from 'next/image';
 import { signOut } from '@/auth';
 import { ProfileDropdown } from './ProfileDropdown';
 import { GitHubStarButton } from './GitHubStarButton';
-import { HelpDropdown } from './HelpDropdown';
 
 type UserSession = {
   name?: string | null;
@@ -38,9 +37,9 @@ export function Navbar({
           </span>
         </Link>
 
-        {/* Navigation Items (Center / Right) */}
+        {/* Minimal Nav Items */}
         <nav className="flex items-center gap-6">
-          <div className="hidden md:flex items-center gap-5">
+          <div className="hidden md:flex items-center gap-6">
             <Link
               href="/docs"
               className="text-sm text-latch-secondary hover:text-latch-primary transition-colors"
@@ -49,20 +48,21 @@ export function Navbar({
             </Link>
             <Link
               href="/changelog"
-              className="text-sm text-latch-secondary hover:text-latch-primary transition-colors flex items-center gap-1"
+              className="text-sm text-latch-secondary hover:text-latch-primary transition-colors"
             >
               Changelog
             </Link>
-            <HelpDropdown />
-            <Link
-              href="/docs#self-host"
+            <a
+              href="https://github.com/ayomidedaniel1/Latch/issues"
+              target="_blank"
+              rel="noopener noreferrer"
               className="text-sm text-latch-secondary hover:text-latch-primary transition-colors"
             >
-              Self-Host
-            </Link>
+              Report an issue
+            </a>
           </div>
 
-          {/* GitHub Star Badge */}
+          {/* Fixed-width Non-twitching GitHub Star Badge */}
           <GitHubStarButton />
 
           {/* User Actions */}
@@ -83,10 +83,10 @@ export function Navbar({
               />
             </div>
           ) : (
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-3">
               <Link
                 href="/signin?callbackUrl=/dashboard"
-                className="text-xs font-medium text-latch-secondary hover:text-latch-primary transition-colors px-2 py-1 hidden sm:block"
+                className="text-xs font-medium text-latch-secondary hover:text-latch-primary transition-colors hidden sm:block"
               >
                 Log In
               </Link>

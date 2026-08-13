@@ -2,26 +2,35 @@
 
 import { useState, useEffect } from 'react';
 
+// Global in-memory cache across client-side page transitions
+let globalStarCache: string | null = null;
+
 export function GitHubStarButton() {
-  const [stars, setStars] = useState<string | null>(null);
+  const [stars, setStars] = useState<string>(globalStarCache || '1.1k');
 
   useEffect(() => {
+    // If already cached in memory during session, do not fetch again (prevents layout twitching)
+    if (globalStarCache) return;
+
     let mounted = true;
     fetch('https://api.github.com/repos/ayomidedaniel1/Latch')
       .then((res) => {
-        if (!res.ok) throw new Error('API limit');
+        if (!res.ok) throw new Error('API rate limit');
         return res.json();
       })
       .then((data) => {
         if (mounted && typeof data?.stargazers_count === 'number') {
           const count = data.stargazers_count;
           const formatted = count >= 1000 ? `${(count / 1000).toFixed(1)}k` : `${count}`;
+          globalStarCache = formatted;
           setStars(formatted);
         }
       })
       .catch(() => {
-        // Fallback to clean format if offline or rate limited
-        if (mounted) setStars('1.1k');
+        if (mounted) {
+          globalStarCache = '1.1k';
+          setStars('1.1k');
+        }
       });
 
     return () => {
@@ -34,7 +43,7 @@ export function GitHubStarButton() {
       href="https://github.com/ayomidedaniel1/Latch"
       target="_blank"
       rel="noopener noreferrer"
-      className="inline-flex items-center rounded-full bg-latch-card border border-latch-border hover:border-latch-border-hover px-3 py-1 text-xs font-mono text-latch-secondary hover:text-latch-primary transition-all group shadow-sm"
+      className="inline-flex items-center rounded-full bg-latch-card border border-latch-border hover:border-latch-border-hover px-3 py-1 text-xs font-mono text-latch-secondary hover:text-latch-primary transition-all group shadow-sm shrink-0"
     >
       <div className="flex items-center gap-1.5 pr-2 border-r border-latch-border">
         <svg className="h-3.5 w-3.5 fill-current text-latch-secondary group-hover:text-latch-primary transition-colors" viewBox="0 0 16 16">
@@ -42,9 +51,9 @@ export function GitHubStarButton() {
         </svg>
         <span className="font-sans font-medium text-xs">Star</span>
       </div>
-      <div className="flex items-center gap-1 pl-2 text-latch-mint font-semibold">
+      <div className="flex items-center gap-1 pl-2 text-latch-mint font-semibold w-11 justify-center">
         <span>★</span>
-        <span>{stars ?? '1.1k'}</span>
+        <span>{stars}</span>
       </div>
     </a>
   );
