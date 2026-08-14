@@ -61,7 +61,7 @@ cp .env.local.example .env.local
 DATABASE_URL=postgresql://postgres:postgres@localhost:5432/latch
 
 # Local Redis connection string
-LOCAL_REDIS_URL=redis://localhost:6379
+REDIS_URL=redis://localhost:6379
 
 # App URL (your local dev server)
 NEXT_PUBLIC_APP_URL=http://localhost:3000

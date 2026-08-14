@@ -4,6 +4,8 @@ import PostgresAdapter from '@auth/pg-adapter';
 import { pool } from '@/lib/db-local';
 
 export const { handlers, auth, signIn, signOut } = NextAuth({
+  secret: process.env.AUTH_SECRET,
+  trustHost: true,
   adapter: PostgresAdapter(pool),
   providers: [
     GitHub({

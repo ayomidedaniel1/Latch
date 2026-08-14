@@ -11,7 +11,7 @@ import type { WebhookPayload } from './types';
  * This is the local-mode replacement for QStash → /api/process.
  */
 
-const redisUrl = process.env.LOCAL_REDIS_URL || 'redis://localhost:6379';
+const redisUrl = process.env.REDIS_URL || 'redis://localhost:6379';
 const redisClient = new Redis(redisUrl);
 
 let running = true;

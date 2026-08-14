@@ -8,7 +8,7 @@ const envSchema = z.object({
   NODE_ENV: z.enum(['development', 'production', 'test']).default('development'),
 
   DATABASE_URL: z.string().min(1),
-  LOCAL_REDIS_URL: z.string().default('redis://localhost:6379'),
+  REDIS_URL: z.string().default('redis://localhost:6379'),
 
   NEXT_PUBLIC_APP_URL: z.string().url(),
 
@@ -31,7 +31,7 @@ export const env = {
   isDev: parsed.data.NODE_ENV === 'development',
 
   databaseUrl: parsed.data.DATABASE_URL,
-  localRedisUrl: parsed.data.LOCAL_REDIS_URL,
+  localRedisUrl: parsed.data.REDIS_URL,
   appUrl: parsed.data.NEXT_PUBLIC_APP_URL,
 
   authSecret: parsed.data.AUTH_SECRET,

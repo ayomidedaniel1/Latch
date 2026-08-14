@@ -8,6 +8,7 @@ const workerPath = path.join(process.cwd(), 'lib', 'worker.ts');
 
 const worker = spawn('npx', ['tsx', workerPath], {
   stdio: 'inherit',
+  shell: true,
   env: {
     ...process.env,
     LATCH_MODE: 'local',

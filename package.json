@@ -4,9 +4,9 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "worker": "tsx scripts/start-worker.ts",
+    "worker": "cross-env LATCH_MODE=local tsx lib/worker.ts",
     "migrate": "tsx scripts/migrate.ts",
-    "build": "next build",
+    "build": "tsx scripts/migrate.ts && next build",
     "start": "next start",
     "test": "tsx --test tests/**/*.test.ts",
     "lint": "eslint"

@@ -26,6 +26,32 @@ async function main() {
 
   console.log('🚀 Running database migrations...');
 
+  // Parse target DB name from connection string
+  let targetDbName = 'postgres';
+  try {
+    const parsedUrl = new URL(connectionString);
+    targetDbName = parsedUrl.pathname.replace(/^\//, '') || 'postgres';
+  } catch {
+    // fallback
+  }
+
+  // If targeting a custom DB name (like "latch"), ensure it exists first via default "postgres" DB
+  if (targetDbName !== 'postgres') {
+    try {
+      const rootUrl = connectionString.replace(/\/[^/]+(\?.*)?$/, '/postgres$1');
+      const rootClient = new pg.Client({ connectionString: rootUrl });
+      await rootClient.connect();
+      const checkDb = await rootClient.query(`SELECT 1 FROM pg_database WHERE datname = $1`, [targetDbName]);
+      if (checkDb.rowCount === 0) {
+        console.log(`Creating database "${targetDbName}"...`);
+        await rootClient.query(`CREATE DATABASE "${targetDbName}"`);
+      }
+      await rootClient.end();
+    } catch {
+      // Non-fatal: if user lacks permissions or root connect fails, proceed directly
+    }
+  }
+
   const schema = readFileSync(join(process.cwd(), 'lib/schema.sql'), 'utf-8');
   const statements = schema
     .split(';')
@@ -44,7 +70,7 @@ async function main() {
     await client.end();
   }
 
-  console.log('\nMigration complete.');
+  console.log('\n✓ Migration complete.');
 }
 
 main().catch(err => {
