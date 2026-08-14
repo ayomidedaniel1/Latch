@@ -58,7 +58,11 @@ async function main() {
     .map(s => s.trim())
     .filter(s => s.length > 0);
 
-  const client = new pg.Client({ connectionString });
+  const isNeon = connectionString.includes('neon.tech');
+  const client = new pg.Client({
+    connectionString,
+    ssl: isNeon ? { rejectUnauthorized: false } : undefined,
+  });
   await client.connect();
 
   try {
