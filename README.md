@@ -20,16 +20,16 @@
 
 ## Tech Stack
 
-| Layer             | Technology                                 | Purpose                                            |
-| :---------------- | :----------------------------------------- | :------------------------------------------------- |
-| **Framework**     | Next.js 16 (App Router, TypeScript)        | Full-stack architecture, Turbopack, Server Actions |
-| **Database**      | PostgreSQL (`pg`)                          | Native TCP connection pool                         |
-| **Queue**         | Redis (`ioredis`)                          | BLPOP-based async ingestion queue                  |
-| **Real-time**     | Redis Pub/Sub + SSE                        | Sub-10ms event delivery to dashboard and CLI       |
-| **Auth**          | Auth.js v5 + PostgreSQL Adapter            | Developer logins and project isolation             |
-| **Tunnel**        | Built-in Latch Tunnel Relay                | SSE-based webhook forwarding to localhost          |
-| **Styling**       | Tailwind CSS v4                            | Sleek, glassmorphic dark-mode aesthetics           |
-| **ORM**           | Raw SQL Queries                            | Speed, simplicity, and query execution efficiency  |
+| Layer         | Technology                          | Purpose                                            |
+| :------------ | :---------------------------------- | :------------------------------------------------- |
+| **Framework** | Next.js 16 (App Router, TypeScript) | Full-stack architecture, Turbopack, Server Actions |
+| **Database**  | PostgreSQL (`pg`)                   | Native TCP connection pool                         |
+| **Queue**     | Redis (`ioredis`)                   | BLPOP-based async ingestion queue                  |
+| **Real-time** | Redis Pub/Sub + SSE                 | Sub-10ms event delivery to dashboard and CLI       |
+| **Auth**      | Auth.js v5 + PostgreSQL Adapter     | Developer logins and project isolation             |
+| **Tunnel**    | Built-in Latch Tunnel Relay         | SSE-based webhook forwarding to localhost          |
+| **Styling**   | Tailwind CSS v4                     | Sleek, glassmorphic dark-mode aesthetics           |
+| **ORM**       | Raw SQL Queries                     | Speed, simplicity, and query execution efficiency  |
 
 ---
 
@@ -124,11 +124,13 @@ Expected response:
 ## Usage Guide
 
 ### 1. Create a Project
+
 - Sign in at your deployed URL with GitHub.
 - Click **"Create New Project"**, enter a name, and specify your optional local destination URL.
 - Latch will instantly generate your unique Ingest URL: `https://<your-domain>/api/ingest/<projectId>`.
 
 ### 2. Configure Your Webhook Provider
+
 - Copy your unique Ingest URL from the dashboard.
 - Paste it into your provider's webhook settings:
   - **Stripe:** Developers &rarr; Webhooks &rarr; Add endpoint
@@ -156,9 +158,10 @@ npx @ayomidedaniel/latch-cli listen <projectId> \
 Copy the full command (with your project ID and token pre-filled) directly from the project dashboard.
 
 ### 4. Inspect & Replay
+
 - Incoming events stream onto the dashboard in real-time.
 - Expand any event to inspect its payload using the interactive JSON tree viewer.
-- Select any two events to compare their payload schemas side-by-side with visual Git-style differences.
+- Select any two events to compare their payload schemas side-by-side with visual Git-style differences
 - Click **"Replay"** on any event to re-dispatch the webhook to your destination URL with original headers and payload intact.
 
 ---
