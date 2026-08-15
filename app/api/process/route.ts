@@ -4,6 +4,12 @@ import { headers } from 'next/headers';
 const MAX_BATCH_SIZE = 10;
 
 export async function POST() {
+  // This route is only used in local dev mode.
+  // In production, the BLPOP worker handles queue processing.
+  if (process.env.NODE_ENV === 'production') {
+    return new Response('Not Found', { status: 404 });
+  }
+
   // Only allow calls from localhost (worker or dev scripts)
   const headersList = await headers();
   const host = headersList.get('host') || '';

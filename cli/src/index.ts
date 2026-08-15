@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 
-import { printHelp, RED, YELLOW } from './format.js';
+import { printHelp, RED, YELLOW, RESET } from './format.js';
 import { connectTunnel } from './commands/tunnel.js';
 import { connectListen } from './commands/listen.js';
 import { runReplay } from './commands/replay.js';
@@ -25,7 +25,7 @@ function parseArgs() {
   } else if (command === 'replay') {
     eventId = args[1] || '';
   } else {
-    console.error(`${RED}Error: Unknown command '${command}'. Supported commands are 'tunnel', 'listen', and 'replay'.${RESET_TEXT}`);
+    console.error(`${RED}Error: Unknown command '${command}'. Supported commands are 'tunnel', 'listen', and 'replay'.${RESET}`);
     printHelp();
     process.exit(1);
   }
@@ -34,7 +34,7 @@ function parseArgs() {
   const idType = command === 'replay' ? 'eventId' : 'projectId';
 
   if (!id) {
-    console.error(`${RED}Error: Missing required argument '${idType}'.${RESET_TEXT}`);
+    console.error(`${RED}Error: Missing required argument '${idType}'.${RESET}`);
     printHelp();
     process.exit(1);
   }
@@ -54,20 +54,20 @@ function parseArgs() {
   }
 
   if (!forwardTo) {
-    console.error(`${RED}Error: Missing required option '--forward-to' or '-f'.${RESET_TEXT}`);
+    console.error(`${RED}Error: Missing required option '--forward-to' or '-f'.${RESET}`);
     process.exit(1);
   }
 
   return { command, projectId, eventId, forwardTo, token, apiUrl };
 }
 
-const RESET_TEXT = '\x1b[0m';
+
 
 async function main() {
   const { command, projectId, eventId, forwardTo, token, apiUrl } = parseArgs();
 
   if (!token) {
-    console.warn(`${YELLOW}Warning: No CLI token provided. If the project requires authentication, execution will fail.${RESET_TEXT}`);
+    console.warn(`${YELLOW}Warning: No CLI token provided. If the project requires authentication, execution will fail.${RESET}`);
   }
 
   if (command === 'tunnel') {
@@ -80,6 +80,6 @@ async function main() {
 }
 
 main().catch((err) => {
-  console.error(`${RED}Fatal error: ${err instanceof Error ? err.message : err}${RESET_TEXT}`);
+  console.error(`${RED}Fatal error: ${err instanceof Error ? err.message : err}${RESET}`);
   process.exit(1);
 });

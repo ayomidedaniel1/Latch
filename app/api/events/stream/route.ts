@@ -61,10 +61,12 @@ export async function GET(req: Request) {
       }
 
       // In local mode, subscribe to Redis Pub/Sub for sub-10ms updates
+      let pubsubActive = false;
       if (env.isLocalMode) {
         try {
           subscriber = redis.createSubscriber();
           await subscriber.subscribe(`events:${projectId}`);
+          pubsubActive = true;
           subscriber.on('message', (_channel, message) => {
             try {
               const event = JSON.parse(message);
@@ -76,9 +78,13 @@ export async function GET(req: Request) {
               logger.error({ err }, 'stream pubsub parse error');
             }
           });
+          subscriber.on('error', () => {
+            pubsubActive = false;
+          });
         } catch (err) {
           logger.error({ err }, 'failed to create redis subscriber');
           subscriber = null;
+          pubsubActive = false;
         }
       }
 
@@ -103,16 +109,18 @@ export async function GET(req: Request) {
             }
           }
 
-          // Polling check (always active in cloud mode; backup in local mode)
-          const rows = await eventsRepo.findByProject(projectId, {
-            cursor: cursorTimestamp,
-            limit: PER_POLL_LIMIT,
-            order: 'ASC',
-          });
+          // Only poll DB when Pub/Sub is not active (cloud mode or pubsub failure)
+          if (!pubsubActive) {
+            const rows = await eventsRepo.findByProject(projectId, {
+              cursor: cursorTimestamp,
+              limit: PER_POLL_LIMIT,
+              order: 'ASC',
+            });
 
-          for (const row of rows) {
-            send(JSON.stringify(row), row.id);
-            cursorTimestamp = row.received_at;
+            for (const row of rows) {
+              send(JSON.stringify(row), row.id);
+              cursorTimestamp = row.received_at;
+            }
           }
         } catch (err) {
           logger.error({ err }, 'stream poll failed');

@@ -4,6 +4,7 @@ export type WebhookEvent = {
   headers: Record<string, string>;
   body: unknown;
   raw_body: string;
+  source_ip?: string;
   received_at: string;
 };
 

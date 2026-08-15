@@ -15,7 +15,7 @@ export async function findByProject(
   if (cursor) {
     if (order === 'ASC') {
       return db`
-        SELECT id, method, headers, body, raw_body, received_at
+        SELECT id, method, headers, body, raw_body, source_ip, received_at
         FROM events
         WHERE project_id = ${projectId} AND received_at > ${cursor}
         ORDER BY received_at ASC
@@ -23,7 +23,7 @@ export async function findByProject(
       `;
     }
     return db`
-      SELECT id, method, headers, body, raw_body, received_at
+      SELECT id, method, headers, body, raw_body, source_ip, received_at
       FROM events
       WHERE project_id = ${projectId} AND received_at < ${cursor}
       ORDER BY received_at DESC
@@ -33,7 +33,7 @@ export async function findByProject(
 
   if (order === 'ASC') {
     return db`
-      SELECT id, method, headers, body, raw_body, received_at
+      SELECT id, method, headers, body, raw_body, source_ip, received_at
       FROM events
       WHERE project_id = ${projectId}
       ORDER BY received_at ASC
@@ -42,7 +42,7 @@ export async function findByProject(
   }
 
   return db`
-    SELECT id, method, headers, body, raw_body, received_at
+    SELECT id, method, headers, body, raw_body, source_ip, received_at
     FROM events
     WHERE project_id = ${projectId}
     ORDER BY received_at DESC
@@ -52,7 +52,7 @@ export async function findByProject(
 
 export async function findById(eventId: string) {
   const rows = await db`
-    SELECT id, project_id, method, headers, body, raw_body, received_at
+    SELECT id, project_id, method, headers, body, raw_body, source_ip, received_at
     FROM events
     WHERE id = ${eventId}
     LIMIT 1
@@ -93,24 +93,29 @@ export async function search(projectId: string, query: string) {
   const isKeyPath = /^[a-zA-Z0-9_]+(?:\.[a-zA-Z0-9_]+)*$/.test(query);
 
   if (isKeyPath && query.length > 0) {
-    const jsonPath = `$.${query}`;
-    return db`
-      SELECT id, method, headers, body, raw_body, received_at
-      FROM events
-      WHERE project_id = ${projectId}
-        AND (
-          body::text ILIKE ${matchPattern}
-          OR headers::text ILIKE ${matchPattern}
-          OR raw_body ILIKE ${matchPattern}
-          OR (body IS NOT NULL AND jsonb_path_exists(body, ${jsonPath}))
-        )
-      ORDER BY received_at DESC
-      LIMIT 50
-    `;
+    const segments = query.split('.');
+    // Limit depth and length to prevent abuse of jsonb_path_exists
+    if (segments.length <= 5 && query.length <= 100) {
+      const jsonPath = `$.${query}`;
+      return db`
+        SELECT id, method, headers, body, raw_body, source_ip, received_at
+        FROM events
+        WHERE project_id = ${projectId}
+          AND (
+            body::text ILIKE ${matchPattern}
+            OR headers::text ILIKE ${matchPattern}
+            OR raw_body ILIKE ${matchPattern}
+            OR (body IS NOT NULL AND jsonb_path_exists(body, ${jsonPath}))
+          )
+        ORDER BY received_at DESC
+        LIMIT 50
+      `;
+    }
+    // Fall through to plain ILIKE search if too deep or too long
   }
 
   return db`
-    SELECT id, method, headers, body, raw_body, received_at
+    SELECT id, method, headers, body, raw_body, source_ip, received_at
     FROM events
     WHERE project_id = ${projectId}
       AND (

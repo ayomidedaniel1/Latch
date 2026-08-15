@@ -31,7 +31,7 @@ export const env = {
   isDev: parsed.data.NODE_ENV === 'development',
 
   databaseUrl: parsed.data.DATABASE_URL,
-  localRedisUrl: parsed.data.REDIS_URL,
+  redisUrl: parsed.data.REDIS_URL,
   appUrl: parsed.data.NEXT_PUBLIC_APP_URL,
 
   authSecret: parsed.data.AUTH_SECRET,
