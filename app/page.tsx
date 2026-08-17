@@ -51,7 +51,7 @@ export default async function Home() {
             </span>
           </h1>
           <p className="text-base md:text-lg text-latch-secondary leading-relaxed max-w-2xl mx-auto">
-            A developer-first, permanent webhook ledger. Connect any third-party service or custom API in seconds. No tunnels, no lost events, infinite one-click replays.
+            A developer-first, permanent webhook ledger. Connect any third-party service or custom API in seconds. Built-in tunnel, zero lost events, infinite one-click replays.
           </p>
           <div className="pt-2">
             {isAuthenticated ? (
@@ -64,7 +64,7 @@ export default async function Home() {
             ) : (
               <Link
                 href="/signin?callbackUrl=/dashboard"
-                className="inline-flex items-center gap-2 rounded-lg bg-latch-mint text-latch-bg hover:bg-latch-mint-hover px-6 py-3 font-semibold transition-all cursor-pointer"
+                className="inline-flex items-center gap-2 rounded-lg bg-latch-mint text-latch-bg hover:bg-latch-mint-hover px-6 py-3 font-semibold transition-all cursor-pointer cta-glow"
               >
                 Get Started with GitHub
               </Link>
@@ -102,10 +102,6 @@ export default async function Home() {
           </div>
 
           <AccordionGroup className="space-y-3 max-w-3xl mx-auto stagger-children text-left">
-            <AccordionItem question="What is a webhook?">
-              A webhook is an HTTP request a third-party service sends to your server when something happens: a payment goes through, a commit is pushed, an order is placed. Latch captures those requests so you can inspect and replay them.
-            </AccordionItem>
-
             <AccordionItem question="What providers work with Latch?">
               Anything that sends an HTTP POST to a URL. Stripe, GitHub, Shopify, Twilio, Clerk, custom backends. If it sends webhooks, Latch can capture them.
             </AccordionItem>
@@ -123,7 +119,7 @@ export default async function Home() {
             </AccordionItem>
 
             <AccordionItem question="Can I self-host Latch?">
-              Yes. It&apos;s a standard Next.js app backed by Neon Postgres and Upstash Redis. Check the{' '}
+              Yes. It&apos;s a standard Next.js app backed by PostgreSQL and Redis &mdash; both run locally, no cloud accounts needed. Check the{' '}
               <Link href="/docs#self-host" className="text-latch-mint hover:underline transition-colors">
                 self-hosting docs
               </Link>{' '}

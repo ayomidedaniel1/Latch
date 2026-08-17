@@ -1,19 +1,14 @@
-import 'server-only';
+// Guard: server-only crashes outside Next.js (worker, scripts).
+// In Next.js it prevents client-component imports of this module.
+try { require('server-only'); } catch {}
+
 import { z } from 'zod';
 
 const envSchema = z.object({
   NODE_ENV: z.enum(['development', 'production', 'test']).default('development'),
 
-  DATABASE_URL: z.string().url(),
-  DATABASE_URL_UNPOOLED: z.string().url(),
-
-  UPSTASH_REDIS_REST_URL: z.string().url(),
-  UPSTASH_REDIS_REST_TOKEN: z.string().min(1),
-
-  QSTASH_TOKEN: z.string().min(1),
-  QSTASH_URL: z.string().url(),
-  QSTASH_CURRENT_SIGNING_KEY: z.string().min(1),
-  QSTASH_NEXT_SIGNING_KEY: z.string().min(1),
+  DATABASE_URL: z.string().min(1),
+  REDIS_URL: z.string().default('redis://localhost:6379'),
 
   NEXT_PUBLIC_APP_URL: z.string().url(),
 
@@ -31,18 +26,12 @@ if (!parsed.success) {
 }
 
 export const env = {
+  isLocalMode: !process.env.LATCH_MODE || process.env.LATCH_MODE === 'local',
   nodeEnv: parsed.data.NODE_ENV,
   isDev: parsed.data.NODE_ENV === 'development',
 
   databaseUrl: parsed.data.DATABASE_URL,
-  databaseUrlUnpooled: parsed.data.DATABASE_URL_UNPOOLED,
-
-  redisUrl: parsed.data.UPSTASH_REDIS_REST_URL,
-  redisToken: parsed.data.UPSTASH_REDIS_REST_TOKEN,
-
-  qstashToken: parsed.data.QSTASH_TOKEN,
-  qstashUrl: parsed.data.QSTASH_URL,
-
+  redisUrl: parsed.data.REDIS_URL,
   appUrl: parsed.data.NEXT_PUBLIC_APP_URL,
 
   authSecret: parsed.data.AUTH_SECRET,

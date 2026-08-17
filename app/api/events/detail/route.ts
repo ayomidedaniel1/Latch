@@ -1,5 +1,5 @@
-import { db } from '@/lib/db';
-import { auth } from '@/auth';
+import { authorizeProjectAccess } from '@/lib/services/auth-check';
+import * as eventsRepo from '@/lib/repositories/events';
 
 export async function GET(req: Request) {
   const url = new URL(req.url);
@@ -9,49 +9,13 @@ export async function GET(req: Request) {
   }
 
   // Fetch the event
-  const eventRows = await db`
-    SELECT id, project_id, method, headers, body, raw_body, received_at 
-    FROM events 
-    WHERE id = ${eventId} 
-    LIMIT 1
-  `;
-  if (eventRows.length === 0) {
+  const event = await eventsRepo.findById(eventId);
+  if (!event) {
     return new Response('Event not found', { status: 404 });
   }
-  const event = eventRows[0];
 
-  let authorized = false;
-
-  // Authenticate via NextAuth User Session
-  const session = await auth();
-  if (session?.user?.id) {
-    const projectRows = await db`
-      SELECT id FROM projects WHERE id = ${event.project_id} AND user_id = ${session.user.id} LIMIT 1
-    `;
-    if (projectRows.length > 0) {
-      authorized = true;
-    }
-  }
-
-  // Authenticate via Project CLI Token
-  if (!authorized) {
-    const authHeader = req.headers.get('authorization');
-    let token = authHeader?.startsWith('Bearer ') ? authHeader.substring(7).trim() : null;
-
-    if (!token) {
-      token = url.searchParams.get('token');
-    }
-
-    if (token) {
-      const projectRows = await db`
-        SELECT id FROM projects WHERE id = ${event.project_id} AND cli_token = ${token} LIMIT 1
-      `;
-      if (projectRows.length > 0) {
-        authorized = true;
-      }
-    }
-  }
-
+  // Authorize via unified auth check (session OR CLI token)
+  const { authorized } = await authorizeProjectAccess(req, event.project_id);
   if (!authorized) {
     return new Response('Unauthorized', { status: 401 });
   }

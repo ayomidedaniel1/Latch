@@ -1,8 +1,9 @@
-import { db } from '@/lib/db';
-import { auth } from '@/auth';
+import { authorizeProjectAccess } from '@/lib/services/auth-check';
+import * as eventsRepo from '@/lib/repositories/events';
 import { redis } from '@/lib/redis';
+import { env } from '@/lib/env';
+import { logger } from '@/lib/logger';
 
-export const runtime = 'edge';
 
 const POLL_INTERVAL_MS = 2000;
 const INITIAL_BATCH_SIZE = 50;
@@ -13,48 +14,27 @@ export async function GET(req: Request) {
   const projectId = url.searchParams.get('projectId');
   if (!projectId) return new Response('Missing projectId', { status: 400 });
 
-  let authorized = false;
-
-  const session = await auth();
-  if (session?.user?.id) {
-    const projectRows = await db`
-      SELECT id FROM projects WHERE id = ${projectId} AND user_id = ${session.user.id} LIMIT 1
-    `;
-    if (projectRows.length > 0) {
-      authorized = true;
-    }
-  } else {
-    // Check Authorization: Bearer <cli_token> for Latch CLI
-    const authHeader = req.headers.get('authorization');
-    let token = authHeader?.startsWith('Bearer ') ? authHeader.substring(7).trim() : null;
-
-    if (!token) {
-      token = url.searchParams.get('token');
-    }
-
-    if (token) {
-      const projectRows = await db`
-        SELECT id FROM projects WHERE id = ${projectId} AND cli_token = ${token} LIMIT 1
-      `;
-      if (projectRows.length > 0) {
-        authorized = true;
-      }
-    }
-  }
-
+  // Unified auth check (session OR CLI token)
+  const { authorized, isCliRequest } = await authorizeProjectAccess(req, projectId);
   if (!authorized) {
     return new Response('Unauthorized', { status: 401 });
   }
 
-  const isCliRequest = !session?.user?.id;
   const lastEventId = req.headers.get('last-event-id');
   const encoder = new TextEncoder();
+
+  // Hoisted to outer scope so cancel() can clean up
+  let subscriber: ReturnType<typeof redis.createSubscriber> | null = null;
 
   const stream = new ReadableStream({
     async start(controller) {
       const send = (data: string, id?: string) => {
-        const msg = id ? `id: ${id}\ndata: ${data}\n\n` : `data: ${data}\n\n`;
-        controller.enqueue(encoder.encode(msg));
+        try {
+          const msg = id ? `id: ${id}\ndata: ${data}\n\n` : `data: ${data}\n\n`;
+          controller.enqueue(encoder.encode(msg));
+        } catch {
+          // Controller might be closed
+        }
       };
 
       send('connected');
@@ -63,38 +43,63 @@ export async function GET(req: Request) {
       let lastRedisCheck = 0;
       let lastCliStatus: boolean | null = null;
 
+      // Resolve cursor from Last-Event-ID header
       if (lastEventId) {
-        const rows = await db`
-          SELECT received_at FROM events WHERE id = ${lastEventId} LIMIT 1
-        `;
-        cursorTimestamp = rows[0]?.received_at ?? null;
+        cursorTimestamp = await eventsRepo.getReceivedAt(lastEventId);
       }
 
+      // Send initial batch
       if (!cursorTimestamp) {
-        const initial = await db`
-          SELECT id, method, headers, body, raw_body, received_at
-          FROM events
-          WHERE project_id = ${projectId}
-          ORDER BY received_at DESC
-          LIMIT ${INITIAL_BATCH_SIZE}
-        `;
+        const initial = await eventsRepo.findByProject(projectId, {
+          limit: INITIAL_BATCH_SIZE,
+          order: 'DESC',
+        });
         for (const row of initial.reverse()) {
           send(JSON.stringify(row), row.id);
           cursorTimestamp = row.received_at;
         }
       }
 
-      while (true) {
+      // In local mode, subscribe to Redis Pub/Sub for sub-10ms updates
+      let pubsubActive = false;
+      if (env.isLocalMode) {
+        try {
+          subscriber = redis.createSubscriber();
+          await subscriber.subscribe(`events:${projectId}`);
+          pubsubActive = true;
+          subscriber.on('message', (_channel, message) => {
+            try {
+              const event = JSON.parse(message);
+              if (event && event.id) {
+                send(JSON.stringify(event), event.id);
+                cursorTimestamp = event.received_at;
+              }
+            } catch (err) {
+              logger.error({ err }, 'stream pubsub parse error');
+            }
+          });
+          subscriber.on('error', () => {
+            pubsubActive = false;
+          });
+        } catch (err) {
+          logger.error({ err }, 'failed to create redis subscriber');
+          subscriber = null;
+          pubsubActive = false;
+        }
+      }
+
+      // Main loop for CLI heartbeats, status checks, and polling fallback
+      while (!req.signal.aborted) {
         try {
           if (isCliRequest) {
-            // set CLI as active for 10 seconds
+            // Set CLI as active for 10 seconds
             await redis.set(`project:${projectId}:cli-active`, 'true', { ex: 10 });
           } else {
             // Browser: check if CLI is active every 6 seconds
             const now = Date.now();
             if (now - lastRedisCheck > 6000) {
               const redisVal = await redis.get(`project:${projectId}:cli-active`);
-              const active = redisVal === 'true' || redisVal === true;
+              const active = redisVal === 'true';
               lastRedisCheck = now;
 
               if (active !== lastCliStatus) {
@@ -104,33 +109,32 @@ export async function GET(req: Request) {
             }
           }
 
-          const rows = cursorTimestamp
-            ? await db`
-                SELECT id, method, headers, body, raw_body, received_at
-                FROM events
-                WHERE project_id = ${projectId} AND received_at > ${cursorTimestamp}
-                ORDER BY received_at ASC
-                LIMIT ${PER_POLL_LIMIT}
-              `
-            : await db`
-                SELECT id, method, headers, body, raw_body, received_at
-                FROM events
-                WHERE project_id = ${projectId}
-                ORDER BY received_at ASC
-                LIMIT ${PER_POLL_LIMIT}
-              `;
+          // Only poll DB when Pub/Sub is not active (cloud mode or pubsub failure)
+          if (!pubsubActive) {
+            const rows = await eventsRepo.findByProject(projectId, {
+              cursor: cursorTimestamp,
+              limit: PER_POLL_LIMIT,
+              order: 'ASC',
+            });
 
-          for (const row of rows) {
-            send(JSON.stringify(row), row.id);
-            cursorTimestamp = row.received_at;
+            for (const row of rows) {
+              send(JSON.stringify(row), row.id);
+              cursorTimestamp = row.received_at;
+            }
           }
         } catch (err) {
-          console.error('[stream] poll failed', err);
+          logger.error({ err }, 'stream poll failed');
         }
 
         await new Promise(r => setTimeout(r, POLL_INTERVAL_MS));
       }
     },
+    cancel() {
+      if (subscriber) {
+        subscriber.unsubscribe().catch(() => {});
+        subscriber.disconnect();
+      }
+    }
   });
 
   return new Response(stream, {

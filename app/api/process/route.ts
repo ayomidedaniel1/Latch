@@ -1,80 +1,29 @@
-import { db } from '@/lib/db';
-import { redis } from '@/lib/redis';
-import { verifySignatureAppRouter } from '@upstash/qstash/nextjs';
-import { env } from '@/lib/env';
+import { drainQueue } from '@/lib/services/processor';
+import { headers } from 'next/headers';
 
-interface WebhookPayload {
-  projectId: string;
-  headers: Record<string, string>;
-  raw: string;
-  receivedAt: string;
-  sourceIp: string | null;
-}
+const MAX_BATCH_SIZE = 10;
 
-// Core processing logic extracted so it can be called directly in dev
-async function processNextItem(): Promise<Response> {
-  const item = await redis.rpop<WebhookPayload | string>('webhook-queue');
-
-  if (!item) {
-    // Queue is empty - normal, return 200
-    return Response.json({ ok: true, message: 'Queue empty' });
+export async function POST() {
+  // This route is only used in local dev mode.
+  // In production, the BLPOP worker handles queue processing.
+  if (process.env.NODE_ENV === 'production') {
+    return new Response('Not Found', { status: 404 });
   }
 
-  // Handle cases where the client automatically deserializes the JSON string
-  const payload: WebhookPayload = typeof item === 'string' ? JSON.parse(item) : item;
-  const { projectId, headers, raw, receivedAt, sourceIp } = payload;
+  // Only allow calls from localhost (worker or dev scripts)
+  const headersList = await headers();
+  const host = headersList.get('host') || '';
+  const forwarded = headersList.get('x-forwarded-for') || '';
+  const isLocalCall =
+    host.startsWith('localhost') ||
+    host.startsWith('127.0.0.1') ||
+    forwarded === '127.0.0.1' ||
+    forwarded === '::1';
 
-  const projectRows = await db`
-    SELECT id FROM projects WHERE id = ${projectId} LIMIT 1
-  `;
-
-  if (projectRows.length === 0) {
-    console.warn(`[process] Unknown projectId: ${projectId}`);
-    return Response.json({ ok: true, message: 'Unknown project, skipped' });
+  if (!isLocalCall) {
+    return new Response('Forbidden', { status: 403 });
   }
 
-  // Try to parse raw body as JSON - fall back to null if it is not valid JSON
-  let body: unknown = null;
-  try {
-    body = JSON.parse(raw);
-  } catch {
-    // Not JSON - raw_body is the source of truth, body column stays null
-  }
-
-  // Insert the event
-  const [event] = await db`
-    INSERT INTO events (
-      project_id,
-      method,
-      headers,
-      body,
-      raw_body,
-      source_ip,
-      received_at
-    ) VALUES (
-      ${projectId},
-      ${'POST'},
-      ${JSON.stringify(headers)},
-      ${body ? JSON.stringify(body) : null},
-      ${raw},
-      ${sourceIp},
-      ${receivedAt}
-    )
-    RETURNING id
-  `;
-
-  console.log(`[process] Stored event ${event.id} for project ${projectId}`);
-  return Response.json({ ok: true, eventId: event.id });
-}
-
-const productionHandler = verifySignatureAppRouter(
-  async () => processNextItem()
-);
-
-export async function POST(req: Request) {
-  if (env.isDev) {
-    // Skip signature verification in dev
-    return processNextItem();
-  }
-  return productionHandler(req);
+  const processed = await drainQueue(MAX_BATCH_SIZE);
+  return Response.json({ ok: true, processed });
 }

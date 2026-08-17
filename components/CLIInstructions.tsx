@@ -15,6 +15,7 @@ export function CLIInstructions({
   cliToken,
   destinationUrl,
 }: CLIInstructionsProps) {
+  const [activeTab, setActiveTab] = useState<'tunnel' | 'listen'>('tunnel');
   const [showToken, setShowToken] = useState(false);
   const [copiedCommand, setCopiedCommand] = useState(false);
   const [copiedToken, setCopiedToken] = useState(false);
@@ -22,11 +23,13 @@ export function CLIInstructions({
   const [isPending, startTransition] = useTransition();
 
   const forwardUrl = destinationUrl || 'http://localhost:3000/api/webhook';
-  const command = `npx @ayomidedaniel/latch-cli listen ${projectId} --forward-to ${forwardUrl} --token ${cliToken || '<token>'}`;
+  const tunnelCommand = `npx @ayomidedaniel/latch-cli tunnel ${projectId} --forward-to ${forwardUrl} --token ${cliToken || '<token>'}`;
+  const listenCommand = `npx @ayomidedaniel/latch-cli listen ${projectId} --forward-to ${forwardUrl} --token ${cliToken || '<token>'}`;
+  const currentCommand = activeTab === 'tunnel' ? tunnelCommand : listenCommand;
 
   const handleCopyCommand = async () => {
     try {
-      await navigator.clipboard.writeText(command);
+      await navigator.clipboard.writeText(currentCommand);
       setCopiedCommand(true);
       setTimeout(() => setCopiedCommand(false), 2000);
     } catch (err) {
@@ -65,10 +68,10 @@ export function CLIInstructions({
         <div>
           <h3 className="text-sm font-bold text-white font-mono flex items-center gap-2">
             <span className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse"></span>
-            Latch CLI (Local Proxy Tunnel)
+            Latch CLI (Built-in Tunnel & Listener)
           </h3>
           <p className="text-[11px] text-zinc-400 mt-1 max-w-xl">
-            Forward live webhooks arriving at Latch straight to localhost. Outbound-only tunnel bypasses firewalls and NATs.
+            Forward live webhooks arriving at Latch straight to localhost without third-party services like ngrok or Cloudflare.
           </p>
         </div>
         <div className="flex items-center gap-2">
@@ -89,15 +92,39 @@ export function CLIInstructions({
       </div>
 
       <div className="space-y-3">
+        {/* Mode Selector Tabs */}
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => setActiveTab('tunnel')}
+            className={`px-3 py-1 text-xs font-mono rounded-md border transition-all cursor-pointer ${
+              activeTab === 'tunnel'
+                ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-400 font-semibold'
+                : 'bg-zinc-950 border-zinc-900 text-zinc-500 hover:text-zinc-300'
+            }`}
+          >
+            Built-in Tunnel (Recommended)
+          </button>
+          <button
+            onClick={() => setActiveTab('listen')}
+            className={`px-3 py-1 text-xs font-mono rounded-md border transition-all cursor-pointer ${
+              activeTab === 'listen'
+                ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-400 font-semibold'
+                : 'bg-zinc-950 border-zinc-900 text-zinc-500 hover:text-zinc-300'
+            }`}
+          >
+            Listen Mode
+          </button>
+        </div>
+
         {/* CLI Command Block */}
         <div className="space-y-1">
           <label className="text-[9px] font-mono font-semibold text-zinc-500 uppercase tracking-wider">
-            Listen & Forward Command
+            {activeTab === 'tunnel' ? 'Built-in Local Tunnel Command' : 'Listen & Forward Command'}
           </label>
           <div className="relative group rounded-lg border border-zinc-900 bg-zinc-950 p-3 font-mono text-xs flex items-center justify-between gap-4 overflow-hidden">
             <div className="overflow-x-auto whitespace-nowrap text-zinc-300 pr-10 scrollbar-thin scrollbar-track-transparent scrollbar-thumb-zinc-800">
               <span className="text-zinc-500">npx</span>{' '}
-              <span className="text-emerald-400">latch-cli</span> listen{' '}
+              <span className="text-emerald-400">@ayomidedaniel/latch-cli</span> {activeTab}{' '}
               <span className="text-zinc-400">{projectId}</span>{' '}
               <span className="text-zinc-500">--forward-to</span>{' '}
               <span className="text-teal-400">{forwardUrl}</span>{' '}
@@ -154,20 +181,17 @@ export function CLIInstructions({
         {/* What is this? explainer */}
         <details className="group">
           <summary className="text-[11px] text-zinc-500 hover:text-zinc-300 cursor-pointer transition-colors font-medium select-none">
-            What is this?
+            What is the Built-in Tunnel?
           </summary>
           <div className="mt-3 space-y-2.5 text-xs text-zinc-500 leading-relaxed pl-1 border-l-2 border-zinc-900 ml-0.5">
             <p className="pl-3">
-              The CLI is optional. It forwards incoming webhooks from Latch to a URL on your local machine so you can test against real payloads without exposing localhost to the internet.
+              <span className="text-zinc-400 font-medium">Built-in Tunnel</span>: Latch acts as its own secure tunnel relay. When third parties (Stripe, GitHub, Shopify) post webhooks to your Latch ingest URL, Latch streams them directly to your local development machine via Latch CLI without using ngrok or Cloudflare.
             </p>
             <p className="pl-3">
-              <span className="text-zinc-400 font-medium">Without the CLI</span>: you can still see, search, diff, and replay webhooks from the dashboard. Replay sends the event to whatever Destination URL you set on the project.
+              <span className="text-zinc-400 font-medium">Rate & Connection Limits</span>: To protect infrastructure, Latch limits active tunnel connections to max 3 concurrent clients per project and 100 events/minute.
             </p>
             <p className="pl-3">
-              <span className="text-zinc-400 font-medium">With the CLI</span>: events get forwarded to your local server the moment they arrive. Similar to ngrok, but it connects to the events Latch already captured.
-            </p>
-            <p className="pl-3">
-              <span className="text-zinc-400 font-medium">To run it</span>: copy the command above and paste it in your terminal. It uses <code className="text-zinc-400 bg-zinc-900 px-1 rounded">npx</code>, so there&apos;s nothing to install globally.
+              <span className="text-zinc-400 font-medium">To run it</span>: copy the command above and paste it in your terminal.
             </p>
             <div className="pl-3 pt-1">
               <a href="/docs#cli" className="text-[11px] text-emerald-400 hover:text-emerald-300 font-semibold transition-colors">

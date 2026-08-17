@@ -1,206 +1,199 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { JsonTree } from './JsonTree';
 
 type MockEvent = {
   id: string;
-  provider: string;
   type: string;
-  color: string;
   timestamp: string;
   method: string;
   headers: Record<string, string>;
   body: unknown;
 };
 
-const MOCK_EVENTS: MockEvent[] = [
+const CLEAN_UNIVERSAL_EVENTS: MockEvent[] = [
   {
-    id: 'stripe-1',
-    provider: 'stripe',
-    type: 'payment_intent.succeeded',
-    color: 'text-provider-stripe border-provider-stripe/30 bg-provider-stripe/10',
+    id: 'evt-1',
+    type: 'user.signup',
+    timestamp: '10:05:01 AM',
+    method: 'POST',
+    headers: {
+      'content-type': 'application/json',
+      'x-signature-256': 'sha256=9f8e7d6c5b4a...',
+      'user-agent': 'WebhookGateway/v1',
+    },
+    body: {
+      event: 'user.signup',
+      user_id: 'usr_99182',
+      email: 'alex@company.com',
+      plan: 'pro_tier',
+    },
+  },
+  {
+    id: 'evt-2',
+    type: 'payment.succeeded',
+    timestamp: '10:04:45 AM',
+    method: 'POST',
+    headers: {
+      'content-type': 'application/json',
+      'x-signature-256': 'sha256=a8f9c7b6e5d4...',
+      'user-agent': 'WebhookGateway/v1',
+    },
+    body: {
+      event: 'payment.succeeded',
+      transaction_id: 'txn_3Mjj2WLkd',
+      amount: 4900,
+      currency: 'usd',
+      status: 'completed',
+    },
+  },
+  {
+    id: 'evt-3',
+    type: 'agent.completed',
     timestamp: '10:04:12 AM',
     method: 'POST',
     headers: {
       'content-type': 'application/json',
-      'stripe-signature': 't=1672531199,v1=g9e8f...',
-      'user-agent': 'Stripe/v1 Webhooks',
+      'x-signature-256': 'sha256=c8e7f9a2b5d1...',
+      'user-agent': 'AIEngine/v2',
     },
     body: {
-      id: 'evt_1Mjj2XLkdG4vNVV',
-      object: 'event',
-      type: 'payment_intent.succeeded',
-      data: {
-        object: {
-          id: 'pi_3Mjj2WLkdG4vNVV',
-          amount: 4900,
-          currency: 'usd',
-          status: 'succeeded',
-        },
-      },
+      event: 'agent.completed',
+      task_id: 'task_88192',
+      tokens_processed: 1420,
+      execution_ms: 380,
     },
   },
   {
-    id: 'github-1',
-    provider: 'github',
-    type: 'push',
-    color: 'text-provider-github border-provider-github/30 bg-provider-github/10',
-    timestamp: '10:02:45 AM',
+    id: 'evt-4',
+    type: 'order.dispatched',
+    timestamp: '10:03:22 AM',
     method: 'POST',
     headers: {
       'content-type': 'application/json',
-      'x-github-event': 'push',
-      'x-hub-signature-256': 'sha256=a8f9c...',
+      'x-signature-256': 'sha256=d8f9a0c1b2e3...',
+      'user-agent': 'FulfillmentService/v1',
     },
     body: {
-      ref: 'refs/heads/main',
-      before: 'a2f9b8c...',
-      after: 'c8e7f9a...',
-      repository: {
-        name: 'latch',
-        full_name: 'developer/latch',
-      },
-    },
-  },
-  {
-    id: 'shopify-1',
-    provider: 'shopify',
-    type: 'orders/create',
-    color: 'text-provider-shopify border-provider-shopify/30 bg-provider-shopify/10',
-    timestamp: '09:58:30 AM',
-    method: 'POST',
-    headers: {
-      'content-type': 'application/json',
-      'x-shopify-topic': 'orders/create',
-      'x-shopify-hmac-sha256': 'd8f9a...',
-    },
-    body: {
-      id: 827391827,
-      email: 'customer@latch.dev',
-      total_price: '120.00',
-      currency: 'USD',
-      line_items: [
-        {
-          title: 'Premium Subscription Plan',
-          quantity: 1,
-        },
-      ],
+      event: 'order.dispatched',
+      order_id: 'ord_990182',
+      carrier: 'Express Logistics',
+      status: 'in_transit',
     },
   },
 ];
 
 export function LandingMockup() {
-  const [selectedId, setSelectedId] = useState('stripe-1');
+  const [selectedId, setSelectedId] = useState('evt-1');
   const [loading, setLoading] = useState(false);
-  const [replayed, setReplayed] = useState(false);
   const [targetUrl, setTargetUrl] = useState('http://localhost:3000/api/webhook');
+  const activeIndexRef = useRef(0);
 
-  const selectedEvent = MOCK_EVENTS.find((e) => e.id === selectedId) ?? MOCK_EVENTS[0];
+  // Smooth, calm auto-cycle sequence
+  useEffect(() => {
+    const interval = setInterval(() => {
+      activeIndexRef.current = (activeIndexRef.current + 1) % CLEAN_UNIVERSAL_EVENTS.length;
+      const nextEvent = CLEAN_UNIVERSAL_EVENTS[activeIndexRef.current];
+      setSelectedId(nextEvent.id);
+    }, 3200);
+
+    return () => clearInterval(interval);
+  }, []);
+
+  const selectedEvent = CLEAN_UNIVERSAL_EVENTS.find((e) => e.id === selectedId) ?? CLEAN_UNIVERSAL_EVENTS[0];
 
   function handleMockReplay() {
     setLoading(true);
-    setReplayed(false);
     setTimeout(() => {
       setLoading(false);
-      setReplayed(true);
-    }, 800);
+    }, 350);
   }
 
   return (
-    <div className="w-full rounded-xl border border-latch-border bg-latch-card p-1 md:p-2 text-latch-secondary font-sans text-left">
-      {/* Top Header Mock Bar */}
-      <div className="flex items-center justify-between border-b border-latch-border px-4 py-3 text-xs">
-        <div className="flex items-center gap-2">
+    <div className="w-full rounded-2xl border border-latch-border bg-latch-card text-latch-secondary font-sans text-left shadow-xl overflow-hidden">
+      {/* Sleek Minimal Header */}
+      <div className="flex items-center justify-between border-b border-latch-border px-4 py-2.5 text-xs bg-latch-bg/40">
+        <div className="flex items-center gap-2.5">
           <span className="relative flex h-2 w-2">
             <span className="absolute inline-flex h-full w-full rounded-full bg-latch-mint opacity-75 animate-ping" />
             <span className="relative inline-flex h-2 w-2 rounded-full bg-latch-mint" />
           </span>
-          <span className="text-latch-primary font-medium font-mono">live_webhook_stream</span>
+          <span className="text-latch-primary font-mono text-xs">live_webhook_stream</span>
         </div>
-        <div className="text-latch-muted font-mono text-xs">connected: http://localhost:3000</div>
+
+        <div className="text-latch-muted font-mono text-xs">
+          connected: <span className="text-latch-primary">http://localhost:3000</span>
+        </div>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 divide-y md:divide-y-0 md:divide-x divide-latch-border min-h-[360px]">
-        {/* Left Side: Mock Events List */}
+      <div className="grid grid-cols-1 md:grid-cols-2 divide-y md:divide-y-0 md:divide-x divide-latch-border min-h-[340px]">
+        {/* Left Side: Minimal Stream List */}
         <div className="p-3 space-y-2">
-          {MOCK_EVENTS.map((event) => (
-            <button
-              key={event.id}
-              onClick={() => {
-                setSelectedId(event.id);
-                setReplayed(false);
-              }}
-              className={`w-full text-left rounded-lg border p-3 text-xs transition-all cursor-pointer ${
-                selectedId === event.id
-                  ? 'border-latch-mint-border bg-latch-card-hover text-latch-primary'
-                  : 'border-latch-border hover:border-latch-border-hover bg-latch-bg text-latch-secondary'
-              }`}
-            >
-              <div className="flex justify-between items-center mb-1.5">
-                <span className="font-mono text-xs text-latch-muted">{event.timestamp}</span>
-                <span className={`px-2 py-0.5 rounded text-xs font-mono border ${event.color}`}>
-                  {event.provider}
-                </span>
-              </div>
-              <div className="font-mono truncate font-medium text-xs text-latch-primary">{event.type}</div>
-            </button>
-          ))}
+          {CLEAN_UNIVERSAL_EVENTS.map((event) => {
+            const isSelected = selectedId === event.id;
+            return (
+              <button
+                key={event.id}
+                onClick={() => setSelectedId(event.id)}
+                className={`w-full text-left rounded-xl border px-3.5 py-2.5 text-xs transition-all cursor-pointer ${
+                  isSelected
+                    ? 'border-latch-mint-border bg-latch-card-hover text-latch-primary'
+                    : 'border-latch-border hover:border-latch-border-hover bg-latch-bg text-latch-secondary'
+                }`}
+              >
+                <div className="flex justify-between items-center mb-1">
+                  <span className="font-mono text-[11px] text-latch-muted">{event.timestamp}</span>
+                  <span className="text-[10px] font-mono text-latch-mint font-semibold">200 OK</span>
+                </div>
+                <div className="font-mono font-medium text-xs text-latch-primary flex items-center justify-between">
+                  <span>{event.type}</span>
+                  {isSelected && <span className="h-1.5 w-1.5 rounded-full bg-latch-mint" />}
+                </div>
+              </button>
+            );
+          })}
         </div>
 
-        {/* Right Side: Mock Event Viewer */}
-        <div className="p-4 space-y-4 text-xs">
-          <div className="flex justify-between items-center border-b border-latch-border pb-3">
-            <div className="font-mono text-xs text-latch-muted">Selected Event Info</div>
-            <span className="font-mono text-xs bg-latch-card-hover text-latch-primary px-2.5 py-0.5 rounded border border-latch-border">
+        {/* Right Side: Clean Event Inspector */}
+        <div className="p-4 space-y-3.5 text-xs bg-latch-bg/20">
+          <div className="flex justify-between items-center border-b border-latch-border pb-2.5">
+            <span className="font-mono text-xs text-latch-muted">Payload Details</span>
+            <span className="font-mono text-[10px] bg-latch-card-hover text-latch-mint px-2 py-0.5 rounded border border-latch-mint-border font-semibold">
               {selectedEvent.method}
             </span>
           </div>
 
-          {/* Simulated Replay Tool */}
-          <div className="border border-latch-border bg-latch-bg rounded-lg p-3 space-y-2.5">
-            <div className="flex flex-col gap-1.5">
-              <label className="text-xs font-mono text-latch-muted uppercase tracking-wider">
-                Simulated Forward Destination
-              </label>
-              <div className="flex gap-2">
-                <input
-                  type="url"
-                  value={targetUrl}
-                  onChange={(e) => setTargetUrl(e.target.value)}
-                  disabled={loading}
-                  className="flex-1 rounded border border-latch-border px-3 py-1.5 text-xs font-mono focus:outline-none focus:border-latch-border-hover bg-latch-card text-latch-primary"
-                />
-                <button
-                  onClick={handleMockReplay}
-                  disabled={loading}
-                  className="rounded bg-latch-mint hover:bg-latch-mint-hover text-latch-bg px-3.5 py-1.5 text-xs font-semibold font-mono transition-colors cursor-pointer disabled:opacity-50"
-                >
-                  {loading ? 'Replaying...' : 'Replay'}
-                </button>
-              </div>
+          {/* Replay Action Area */}
+          <div className="border border-latch-border bg-latch-bg rounded-xl p-3 space-y-2">
+            <div className="flex gap-2">
+              <input
+                type="url"
+                value={targetUrl}
+                onChange={(e) => setTargetUrl(e.target.value)}
+                disabled={loading}
+                className="flex-1 rounded-lg border border-latch-border px-3 py-1.5 text-xs font-mono bg-latch-card text-latch-primary focus:outline-none"
+              />
+              <button
+                onClick={handleMockReplay}
+                disabled={loading}
+                className="rounded-lg bg-latch-mint hover:bg-latch-mint-hover text-latch-bg px-3.5 py-1.5 text-xs font-semibold font-mono transition-all cursor-pointer disabled:opacity-50"
+              >
+                {loading ? 'Routing...' : 'Replay'}
+              </button>
             </div>
-
-            {replayed && (
-              <div className="border border-latch-mint-border bg-latch-mint-bg rounded p-2.5 text-xs font-mono flex items-center justify-between text-latch-mint">
-                <div className="flex items-center gap-2">
-                  <span className="px-1.5 py-0.5 rounded bg-latch-mint-bg text-xs font-bold font-mono border border-latch-mint-border">
-                    200 OK
-                  </span>
-                  <span>Payload delivered successfully</span>
-                </div>
-                <span className="text-latch-muted">18ms</span>
-              </div>
-            )}
+            <div className="flex items-center justify-between text-[11px] font-mono text-latch-mint pt-1">
+              <span>✓ Delivered to Local Destination</span>
+              <span className="text-latch-muted">14ms</span>
+            </div>
           </div>
 
-          {/* Interactive JSON Tree - Headers */}
-          <div className="max-h-28 overflow-y-auto">
+          {/* Collapsible Headers & Body */}
+          <div className="max-h-28 overflow-y-auto rounded-lg border border-latch-border p-2 bg-latch-card">
             <JsonTree data={selectedEvent.headers} rootLabel="Headers" defaultExpandDepth={1} />
           </div>
 
-          {/* Interactive JSON Tree - Payload */}
-          <div className="max-h-40 overflow-y-auto">
+          <div className="max-h-32 overflow-y-auto rounded-lg border border-latch-border p-2 bg-latch-card">
             <JsonTree data={selectedEvent.body} rootLabel="Payload Body" defaultExpandDepth={2} />
           </div>
         </div>
