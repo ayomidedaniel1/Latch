@@ -5,7 +5,7 @@ import { notFound } from 'next/navigation';
 import { auth } from '@/auth';
 import { Navbar } from '@/components/Navbar';
 import Link from 'next/link';
-import { updateProject } from '../actions';
+import { UpdateProjectForm } from '@/components/UpdateProjectForm';
 import { DeleteProjectButton } from '@/components/DeleteProjectButton';
 import { CLIInstructions } from '@/components/CLIInstructions';
 
@@ -22,9 +22,6 @@ export default async function ProjectPage({
 
   const project = await projectsRepo.verifyOwnership(projectId, userId);
   if (!project) notFound();
-
-  // Bind the action to the projectId
-  const updateProjectWithId = updateProject.bind(null, project.id);
 
   return (
     <div className="min-h-screen bg-zinc-950 text-zinc-100 flex flex-col font-sans selection:bg-emerald-500/30 selection:text-emerald-400">
@@ -69,36 +66,11 @@ export default async function ProjectPage({
           </summary>
           <div className="mt-4 pt-4 border-t border-zinc-900 grid grid-cols-1 md:grid-cols-3 gap-6 items-start">
             {/* Update form */}
-            <form action={updateProjectWithId} className="md:col-span-2 space-y-4">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="space-y-1">
-                  <label className="text-[9px] font-mono font-semibold text-zinc-400 uppercase tracking-wider">Project Name</label>
-                  <input
-                    name="name"
-                    type="text"
-                    defaultValue={project.name}
-                    required
-                    className="w-full rounded-lg border border-zinc-900 bg-zinc-950 px-3 py-2 text-xs text-zinc-100 placeholder:text-zinc-500 focus:outline-none focus:border-zinc-800 transition-all font-mono"
-                  />
-                </div>
-                <div className="space-y-1">
-                  <label className="text-[9px] font-mono font-semibold text-zinc-400 uppercase tracking-wider">Destination URL (optional)</label>
-                  <input
-                    name="destinationUrl"
-                    type="url"
-                    defaultValue={project.destination_url || ''}
-                    placeholder="http://localhost:3001/webhook"
-                    className="w-full rounded-lg border border-zinc-900 bg-zinc-950 px-3 py-2 text-xs text-zinc-100 placeholder:text-zinc-500 focus:outline-none focus:border-zinc-800 transition-all font-mono"
-                  />
-                </div>
-              </div>
-              <button
-                type="submit"
-                className="rounded-lg bg-zinc-900 border border-zinc-800 hover:border-zinc-700 px-4 py-1.5 text-xs font-semibold text-white transition-colors cursor-pointer"
-              >
-                Save Settings
-              </button>
-            </form>
+            <UpdateProjectForm
+              projectId={project.id}
+              initialName={project.name}
+              initialDestinationUrl={project.destination_url}
+            />
 
             {/* Danger Zone */}
             <div className="md:col-span-1 rounded-xl border border-red-500/20 bg-red-500/5 p-4 space-y-3">
