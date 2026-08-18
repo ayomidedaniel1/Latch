@@ -1,3 +1,12 @@
+export type Project = {
+  id: string;
+  user_id?: string;
+  name: string;
+  destination_url?: string | null;
+  cli_token: string;
+  created_at: string;
+};
+
 export type WebhookEvent = {
   id: string;
   method: string;

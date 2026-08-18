@@ -39,59 +39,59 @@ export default async function ChangelogPage() {
   const isAuthenticated = !!session?.user?.id;
 
   return (
-    <div className="min-h-screen bg-latch-bg text-latch-primary flex flex-col font-sans">
+    <div className="min-h-screen bg-surface-container-lowest text-on-background flex flex-col font-sans selection:bg-primary-container/30 selection:text-primary">
       <Navbar isAuthenticated={isAuthenticated} user={session?.user} />
 
-      <main className="flex-1 max-w-4xl w-full mx-auto px-6 py-16 space-y-12">
+      <main className="flex-1 max-w-4xl w-full mx-auto px-6 py-12 md:py-16 space-y-12">
         {/* Header */}
-        <div className="space-y-3 border-b border-latch-border pb-8">
+        <div className="space-y-3 border-b border-outline-variant pb-8">
           <div className="flex items-center gap-2">
-            <span className="text-xs font-mono font-bold bg-latch-mint-bg text-latch-mint border border-latch-mint-border px-2.5 py-0.5 rounded-full uppercase tracking-wider">
+            <span className="text-xs font-mono font-bold bg-primary-container/15 text-primary border border-primary-container/30 px-3 py-1 rounded-full uppercase tracking-wider">
               Product Updates
             </span>
           </div>
-          <h1 className="text-3xl md:text-5xl font-bold tracking-tight text-white">
+          <h1 className="text-3xl md:text-5xl font-extrabold tracking-tight text-on-surface">
             Changelog
           </h1>
-          <p className="text-base text-latch-secondary leading-relaxed max-w-2xl">
+          <p className="text-sm md:text-base text-on-surface-variant leading-relaxed max-w-2xl">
             Latest releases, feature enhancements, and architecture updates for Latch.
           </p>
         </div>
 
         {/* Releases List */}
-        <div className="space-y-12">
+        <div className="space-y-8">
           {RELEASES.map((release) => (
             <article
               key={release.version}
-              className="rounded-2xl border border-latch-border bg-latch-card p-6 md:p-8 space-y-6 shadow-xl"
+              className="rounded-2xl border border-outline-variant bg-surface-container-low/70 backdrop-blur-md p-6 md:p-8 space-y-6 shadow-xl glow-hover transition-all"
             >
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-latch-border pb-4">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-outline-variant/60 pb-4">
                 <div className="flex items-center gap-3">
-                  <span className="text-lg font-bold font-mono text-latch-mint">
+                  <span className="text-lg font-bold font-mono text-primary">
                     {release.version}
                   </span>
-                  <h2 className="text-xl font-bold text-white tracking-tight">
+                  <h2 className="text-lg md:text-xl font-bold text-on-surface tracking-tight">
                     {release.title}
                   </h2>
                 </div>
-                <span className="text-xs font-mono text-latch-muted">
+                <span className="text-xs font-mono text-outline">
                   {release.date}
                 </span>
               </div>
 
-              <p className="text-sm text-latch-secondary leading-relaxed">
+              <p className="text-xs md:text-sm text-on-surface-variant leading-relaxed">
                 {release.description}
               </p>
 
               <div className="space-y-3 pt-2">
-                <h3 className="text-xs font-mono font-bold uppercase tracking-wider text-latch-muted">
+                <h3 className="text-xs font-mono font-bold uppercase tracking-wider text-outline">
                   What&apos;s New
                 </h3>
-                <ul className="grid grid-cols-1 gap-2.5 text-xs text-latch-secondary">
+                <ul className="grid grid-cols-1 gap-2.5 text-xs text-on-surface-variant">
                   {release.highlights.map((item, idx) => (
                     <li
                       key={idx}
-                      className="flex items-start gap-2.5 rounded-lg border border-latch-border/60 bg-latch-bg/50 px-3.5 py-2.5"
+                      className="flex items-start gap-2.5 rounded-xl border border-outline-variant/60 bg-surface-container-lowest px-4 py-3"
                     >
                       <span>{item}</span>
                     </li>
@@ -103,14 +103,14 @@ export default async function ChangelogPage() {
         </div>
 
         {/* Back Link */}
-        <div className="pt-8 border-t border-latch-border flex justify-between items-center text-xs">
+        <div className="pt-8 border-t border-outline-variant flex justify-between items-center text-xs">
           <Link
             href="/docs"
-            className="text-latch-mint hover:underline transition-all font-mono"
+            className="text-primary hover:underline transition-all font-mono font-semibold"
           >
             ← Back to Documentation
           </Link>
-          <span className="text-latch-muted font-mono">Latch Engine v1.0.0</span>
+          <span className="text-outline font-mono">Latch Engine v1.0.0</span>
         </div>
       </main>
     </div>

@@ -27,12 +27,12 @@ const STEPS = [
 
 export function HowItWorks() {
   return (
-    <section className="w-full border-t border-latch-border pt-16 space-y-8">
+    <section className="w-full border-t border-outline-variant pt-16 space-y-8">
       <div className="text-left space-y-2">
-        <h2 className="text-2xl font-bold text-latch-primary tracking-tight">
+        <h2 className="text-2xl md:text-3xl font-bold text-on-surface tracking-tight">
           How It Works
         </h2>
-        <p className="text-sm text-latch-secondary">
+        <p className="text-sm text-on-surface-variant">
           From zero to capturing webhooks in under two minutes.
         </p>
       </div>
@@ -41,31 +41,31 @@ export function HowItWorks() {
         {STEPS.map((step) => (
           <div
             key={step.number}
-            className="relative border border-latch-border bg-latch-card rounded-xl p-6 flex flex-col justify-between overflow-hidden group hover:border-latch-border-hover transition-all"
+            className="glass-panel rounded-2xl p-6 flex flex-col justify-between overflow-hidden glow-hover transition-all duration-300 relative group"
           >
             <div className="space-y-4 mb-6">
               {/* Step number badge */}
               <div className="flex items-center gap-3">
-                <span className="flex items-center justify-center h-8 w-8 rounded-lg bg-latch-mint-bg border border-latch-mint-border text-latch-mint text-sm font-bold font-mono">
+                <span className="flex items-center justify-center h-8 w-8 rounded-xl bg-primary-container/15 border border-primary-container/30 text-primary text-sm font-bold font-mono">
                   {step.number}
                 </span>
-                <h3 className="font-semibold text-latch-primary text-base">
+                <h3 className="font-bold text-on-surface text-base tracking-tight">
                   {step.title}
                 </h3>
               </div>
 
               {/* Description */}
-              <p className="text-sm text-latch-secondary leading-relaxed">
+              <p className="text-xs md:text-sm text-on-surface-variant leading-relaxed">
                 {step.description}
               </p>
             </div>
 
             {/* Code snippet */}
             <div className="space-y-1.5">
-              <span className="text-xs font-mono font-semibold text-latch-muted uppercase tracking-wider">
+              <span className="text-[10px] font-mono font-semibold text-outline uppercase tracking-wider">
                 {step.label}
               </span>
-              <div className="rounded-lg border border-latch-border bg-latch-bg px-3 py-2.5 font-mono text-xs text-latch-secondary overflow-x-auto whitespace-nowrap">
+              <div className="rounded-xl border border-outline-variant bg-surface-container-lowest px-3 py-2 font-mono text-xs text-on-surface-variant overflow-x-auto whitespace-nowrap">
                 {step.snippet}
               </div>
             </div>

@@ -58,16 +58,16 @@ export function AccordionItem({ question, children, index, defaultOpen = false }
   }
 
   return (
-    <div className="rounded-xl border border-latch-border bg-latch-card overflow-hidden transition-all duration-200 hover:border-latch-border-hover">
+    <div className="rounded-2xl border border-outline-variant bg-surface-container-low/70 backdrop-blur-md overflow-hidden transition-all duration-200 hover:border-primary/40 glow-hover">
       <button
         type="button"
         onClick={handleToggle}
-        className="w-full px-5 py-4 text-base md:text-lg font-medium text-latch-primary cursor-pointer select-none flex items-center justify-between gap-3 text-left transition-colors hover:bg-latch-card-hover"
+        className="w-full px-6 py-4 text-sm md:text-base font-semibold text-on-surface cursor-pointer select-none flex items-center justify-between gap-3 text-left transition-colors hover:bg-surface-container/50"
         aria-expanded={open}
       >
-        {question}
+        <span>{question}</span>
         <svg
-          className="accordion-chevron w-4 h-4 text-latch-secondary shrink-0"
+          className="accordion-chevron w-4 h-4 text-primary shrink-0 transition-transform duration-200"
           data-open={open}
           fill="none"
           viewBox="0 0 24 24"
@@ -79,7 +79,7 @@ export function AccordionItem({ question, children, index, defaultOpen = false }
       </button>
       <div className="accordion-content" data-open={open}>
         <div className="accordion-inner">
-          <div className="px-5 pb-5 pt-1 text-sm md:text-base text-latch-secondary leading-relaxed">
+          <div className="px-6 pb-5 pt-1 text-xs md:text-sm text-on-surface-variant leading-relaxed border-t border-outline-variant/30">
             {children}
           </div>
         </div>

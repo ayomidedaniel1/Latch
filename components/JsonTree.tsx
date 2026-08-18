@@ -2,10 +2,6 @@
 
 import { useState, useCallback } from 'react';
 
-/* -------------------------------------------------------
-   JsonTree - Interactive Collapsible JSON Viewer
-   ------------------------------------------------------- */
-
 type JsonTreeProps = {
   data: unknown;
   rootLabel?: string;
@@ -16,18 +12,16 @@ export function JsonTree({ data, rootLabel, defaultExpandDepth = 2 }: JsonTreePr
   return (
     <div className="font-mono text-[12px] leading-[1.7] overflow-x-auto">
       {rootLabel && (
-        <span className="text-zinc-500 text-[10px] uppercase tracking-wider font-semibold block mb-1">
+        <span className="text-outline text-[10px] uppercase tracking-wider font-semibold block mb-1">
           {rootLabel}
         </span>
       )}
-      <div className="bg-zinc-900/60 border border-zinc-800 rounded-lg p-3">
+      <div className="bg-surface-container-lowest border border-outline-variant rounded-xl p-3.5 shadow-inner">
         <JsonNode value={data} path="" depth={0} defaultExpandDepth={defaultExpandDepth} />
       </div>
     </div>
   );
 }
-
-/* -- Recursive Node Renderer ----------------------------- */
 
 type JsonNodeProps = {
   value: unknown;
@@ -55,40 +49,35 @@ function JsonNode({ value, path, depth, defaultExpandDepth, keyName, isLast = tr
     return (
       <div>
         <span className="inline-flex items-center gap-1 group">
-          {/* Expand/collapse toggle */}
           <button
             onClick={() => setExpanded(!expanded)}
-            className="text-zinc-600 hover:text-zinc-300 transition-colors w-4 text-center shrink-0 cursor-pointer select-none"
+            className="text-outline hover:text-primary transition-colors w-4 text-center shrink-0 cursor-pointer select-none text-[10px]"
             aria-label={expanded ? 'Collapse' : 'Expand'}
           >
             {expanded ? '▼' : '▶'}
           </button>
 
-          {/* Key name (if this is a property, not root) */}
           {keyName !== undefined && (
             <>
               <KeyLabel keyName={keyName} path={path} isArrayIndex={isArray && keyName === String(Number(keyName))} parentIsArray={false} />
-              <span className="text-zinc-600">:</span>
+              <span className="text-outline">:</span>
             </>
           )}
 
-          {/* Opening brace */}
-          <span className="text-zinc-500">{openBrace}</span>
+          <span className="text-primary font-semibold">{openBrace}</span>
 
-          {/* Collapsed preview */}
           {!expanded && (
             <>
-              <span className="text-zinc-600 italic text-[10px]">{preview}</span>
-              <span className="text-zinc-500">{closeBrace}</span>
-              {!isLast && <span className="text-zinc-600">,</span>}
+              <span className="text-outline italic text-[10px]">{preview}</span>
+              <span className="text-primary font-semibold">{closeBrace}</span>
+              {!isLast && <span className="text-outline">,</span>}
             </>
           )}
         </span>
 
-        {/* Expanded children */}
         {expanded && (
           <>
-            <div className="ml-5 border-l border-zinc-800/60 pl-3">
+            <div className="ml-4 border-l border-outline-variant/60 pl-3">
               {entries.map(([childKey, childValue], idx) => {
                 const childPath = isArray
                   ? `${path}[${childKey}]`
@@ -111,8 +100,8 @@ function JsonNode({ value, path, depth, defaultExpandDepth, keyName, isLast = tr
             </div>
             <span className="inline-flex items-center gap-1">
               <span className="w-4" />
-              <span className="text-zinc-500">{closeBrace}</span>
-              {!isLast && <span className="text-zinc-600">,</span>}
+              <span className="text-primary font-semibold">{closeBrace}</span>
+              {!isLast && <span className="text-outline">,</span>}
             </span>
           </>
         )}
@@ -120,23 +109,20 @@ function JsonNode({ value, path, depth, defaultExpandDepth, keyName, isLast = tr
     );
   }
 
-  // Primitive value
   return (
     <div className="inline-flex items-center gap-1 group w-full">
       <span className="w-4 shrink-0" />
       {keyName !== undefined && (
         <>
           <KeyLabel keyName={keyName} path={path} isArrayIndex={!isNaN(Number(keyName))} parentIsArray={!isNaN(Number(keyName))} />
-          <span className="text-zinc-600">:</span>
+          <span className="text-outline">:</span>
         </>
       )}
       <ValueLabel value={value} />
-      {!isLast && <span className="text-zinc-600">,</span>}
+      {!isLast && <span className="text-outline">,</span>}
     </div>
   );
 }
-
-/* -- Key Label with Copy-Path ---------------------------- */
 
 function KeyLabel({
   keyName,
@@ -156,14 +142,14 @@ function KeyLabel({
       setCopied(true);
       setTimeout(() => setCopied(false), 1200);
     } catch {
-      // Clipboard API may fail in insecure contexts
+      // ignore
     }
   }, [path]);
 
   if (isArrayIndex) {
     return (
       <span className="inline-flex items-center gap-1 group/key">
-        <span className="text-zinc-500">{keyName}</span>
+        <span className="text-outline">{keyName}</span>
         <CopyButton onClick={handleCopyPath} copied={copied} label={path} />
       </span>
     );
@@ -171,13 +157,11 @@ function KeyLabel({
 
   return (
     <span className="inline-flex items-center gap-1 group/key">
-      <span className="text-zinc-300">&quot;{keyName}&quot;</span>
+      <span className="text-secondary font-medium">&quot;{keyName}&quot;</span>
       <CopyButton onClick={handleCopyPath} copied={copied} label={path} />
     </span>
   );
 }
-
-/* -- Value Label with Copy-Value ------------------------- */
 
 function ValueLabel({ value }: { value: unknown; }) {
   const [copied, setCopied] = useState(false);
@@ -188,7 +172,7 @@ function ValueLabel({ value }: { value: unknown; }) {
       setCopied(true);
       setTimeout(() => setCopied(false), 1200);
     } catch {
-      // Clipboard API may fail in insecure contexts
+      // ignore
     }
   }, [value]);
 
@@ -196,22 +180,22 @@ function ValueLabel({ value }: { value: unknown; }) {
   let display: string;
 
   if (typeof value === 'string') {
-    colorClass = 'text-emerald-400';
+    colorClass = 'text-primary-fixed';
     display = `"${value}"`;
   } else if (typeof value === 'number') {
-    colorClass = 'text-amber-400';
+    colorClass = 'text-tertiary-container text-[#fc7c78]';
     display = String(value);
   } else if (typeof value === 'boolean') {
-    colorClass = 'text-purple-400';
+    colorClass = 'text-secondary-fixed text-[#b0f0d6]';
     display = String(value);
   } else if (value === null) {
-    colorClass = 'text-red-400';
+    colorClass = 'text-error';
     display = 'null';
   } else if (value === undefined) {
-    colorClass = 'text-red-400';
+    colorClass = 'text-error';
     display = 'undefined';
   } else {
-    colorClass = 'text-zinc-400';
+    colorClass = 'text-on-surface-variant';
     display = String(value);
   }
 
@@ -222,8 +206,6 @@ function ValueLabel({ value }: { value: unknown; }) {
     </span>
   );
 }
-
-/* -- Copy Button ----------------------------------------- */
 
 function CopyButton({
   onClick,
@@ -240,12 +222,12 @@ function CopyButton({
         e.stopPropagation();
         onClick();
       }}
-      className="opacity-0 group-hover/key:opacity-100 group-hover/val:opacity-100 transition-opacity text-zinc-600 hover:text-emerald-400 cursor-pointer shrink-0"
+      className="opacity-0 group-hover/key:opacity-100 group-hover/val:opacity-100 transition-opacity text-outline hover:text-primary cursor-pointer shrink-0"
       title={copied ? 'Copied!' : `Copy: ${label}`}
       aria-label={copied ? 'Copied!' : `Copy ${label}`}
     >
       {copied ? (
-        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor" className="w-3 h-3 text-emerald-400">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor" className="w-3 h-3 text-primary">
           <path fillRule="evenodd" d="M12.416 3.376a.75.75 0 0 1 .208 1.04l-5 7.5a.75.75 0 0 1-1.154.114l-3-3a.75.75 0 0 1 1.06-1.06l2.353 2.353 4.493-6.74a.75.75 0 0 1 1.04-.207Z" clipRule="evenodd" />
         </svg>
       ) : (

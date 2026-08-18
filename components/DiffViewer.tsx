@@ -26,31 +26,31 @@ export function DiffViewer({ eventA, eventB }: DiffViewerProps) {
   }, [entries]);
 
   return (
-    <div className="rounded-lg border border-zinc-800 bg-zinc-900/50 text-sm space-y-0 overflow-hidden">
+    <div className="rounded-2xl border border-outline-variant bg-surface-container-low/70 backdrop-blur-md text-sm space-y-0 overflow-hidden shadow-lg">
       {/* Header */}
-      <div className="flex items-center justify-between border-b border-zinc-800 px-4 py-3">
+      <div className="flex items-center justify-between border-b border-outline-variant px-4 py-3 bg-surface-container/50">
         <div className="flex items-center gap-4 text-xs">
           <EventBadge label="A" color="blue" event={eventA} />
-          <span className="text-zinc-600">vs</span>
+          <span className="text-outline font-semibold">vs</span>
           <EventBadge label="B" color="purple" event={eventB} />
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-1 bg-surface-container-lowest p-1 rounded-lg border border-outline-variant">
           <button
             onClick={() => setDiffTarget('body')}
-            className={`text-[10px] font-mono px-2 py-0.5 rounded transition-colors cursor-pointer ${
+            className={`text-[10px] font-mono font-bold px-2.5 py-1 rounded transition-colors cursor-pointer ${
               diffTarget === 'body'
-                ? 'bg-zinc-800 text-zinc-200'
-                : 'text-zinc-500 hover:text-zinc-300'
+                ? 'bg-primary-container text-on-primary-container shadow-sm'
+                : 'text-on-surface-variant hover:text-on-surface'
             }`}
           >
             Payload
           </button>
           <button
             onClick={() => setDiffTarget('headers')}
-            className={`text-[10px] font-mono px-2 py-0.5 rounded transition-colors cursor-pointer ${
+            className={`text-[10px] font-mono font-bold px-2.5 py-1 rounded transition-colors cursor-pointer ${
               diffTarget === 'headers'
-                ? 'bg-zinc-800 text-zinc-200'
-                : 'text-zinc-500 hover:text-zinc-300'
+                ? 'bg-primary-container text-on-primary-container shadow-sm'
+                : 'text-on-surface-variant hover:text-on-surface'
             }`}
           >
             Headers
@@ -62,9 +62,9 @@ export function DiffViewer({ eventA, eventB }: DiffViewerProps) {
       <DiffSummary counts={counts} />
 
       {/* Diff Body */}
-      <div className="max-h-[500px] overflow-y-auto">
+      <div className="max-h-[520px] overflow-y-auto">
         {entries.length === 0 ? (
-          <div className="px-4 py-8 text-center text-zinc-500 text-xs">
+          <div className="px-4 py-8 text-center text-outline text-xs">
             {dataA == null && dataB == null
               ? 'Both payloads are empty.'
               : 'No differences found. Payloads are identical.'}
@@ -81,8 +81,6 @@ export function DiffViewer({ eventA, eventB }: DiffViewerProps) {
   );
 }
 
-/* -- Event Badge ------------------------------------------ */
-
 function EventBadge({
   label,
   color,
@@ -94,24 +92,22 @@ function EventBadge({
 }) {
   const colorClasses =
     color === 'blue'
-      ? 'bg-blue-500/10 text-blue-400 border-blue-500/20'
-      : 'bg-purple-500/10 text-purple-400 border-purple-500/20';
+      ? 'bg-cyan-500/10 text-cyan-400 border-cyan-500/30'
+      : 'bg-purple-500/10 text-purple-400 border-purple-500/30';
 
   return (
     <div className="flex items-center gap-2">
       <span
-        className={`text-[10px] font-bold px-1.5 py-0.5 rounded border ${colorClasses}`}
+        className={`text-[10px] font-bold px-2 py-0.5 rounded-md border font-mono ${colorClasses}`}
       >
         {label}
       </span>
-      <span className="text-zinc-400 font-mono text-[10px]">
+      <span className="text-on-surface-variant font-mono text-[11px]">
         {new Date(event.received_at).toLocaleTimeString()}
       </span>
     </div>
   );
 }
-
-/* -- Summary Bar ------------------------------------------ */
 
 function DiffSummary({
   counts,
@@ -119,22 +115,20 @@ function DiffSummary({
   counts: Record<DiffEntryType, number>;
 }) {
   return (
-    <div className="flex items-center gap-3 px-4 py-2 border-b border-zinc-800 text-[10px] font-mono">
+    <div className="flex items-center gap-3 px-4 py-2 border-b border-outline-variant text-[11px] font-mono bg-surface-container-lowest/60">
       {counts.added > 0 && (
-        <span className="text-emerald-400">+{counts.added} added</span>
+        <span className="text-primary font-semibold">+{counts.added} added</span>
       )}
       {counts.removed > 0 && (
-        <span className="text-red-400">-{counts.removed} removed</span>
+        <span className="text-error font-semibold">-{counts.removed} removed</span>
       )}
       {counts.changed > 0 && (
-        <span className="text-amber-400">~{counts.changed} changed</span>
+        <span className="text-[#fc7c78] font-semibold">~{counts.changed} changed</span>
       )}
-      <span className="text-zinc-600">{counts.unchanged} unchanged</span>
+      <span className="text-outline">{counts.unchanged} unchanged</span>
     </div>
   );
 }
-
-/* -- Diff Line -------------------------------------------- */
 
 function DiffLine({ entry }: { entry: DiffEntry }) {
   const indent = entry.depth * 16;
@@ -146,46 +140,40 @@ function DiffLine({ entry }: { entry: DiffEntry }) {
 
   return (
     <div
-      className={`flex items-start gap-2 px-4 py-0.5 ${bgClass} border-l-2 ${borderClass}`}
+      className={`flex items-start gap-2 px-4 py-1 ${bgClass} border-l-2 ${borderClass} transition-colors`}
     >
-      {/* Change indicator */}
-      <span className={`shrink-0 w-3 text-center ${iconColor}`}>{iconChar}</span>
+      <span className={`shrink-0 w-3 text-center ${iconColor} font-bold`}>{iconChar}</span>
 
-      {/* Content */}
       <div style={{ paddingLeft: indent }}>
-        <span className="text-zinc-400">{entry.key}</span>
-        <span className="text-zinc-600">: </span>
+        <span className="text-on-surface-variant">{entry.key}</span>
+        <span className="text-outline">: </span>
         <DiffValue entry={entry} />
       </div>
     </div>
   );
 }
 
-/* -- Diff Value Renderer ---------------------------------- */
-
 function DiffValue({ entry }: { entry: DiffEntry }) {
   switch (entry.type) {
     case 'unchanged':
-      return <FormattedValue value={entry.oldValue} className="text-zinc-500" />;
+      return <FormattedValue value={entry.oldValue} className="text-outline" />;
 
     case 'added':
-      return <FormattedValue value={entry.newValue} className="text-emerald-400" />;
+      return <FormattedValue value={entry.newValue} className="text-primary font-semibold" />;
 
     case 'removed':
-      return <FormattedValue value={entry.oldValue} className="text-red-400 line-through" />;
+      return <FormattedValue value={entry.oldValue} className="text-error line-through opacity-80" />;
 
     case 'changed':
       return (
         <span className="inline-flex items-center gap-1.5">
-          <FormattedValue value={entry.oldValue} className="text-red-400 line-through" />
-          <span className="text-zinc-600">{'\u2192'}</span>
-          <FormattedValue value={entry.newValue} className="text-emerald-400" />
+          <FormattedValue value={entry.oldValue} className="text-error line-through opacity-80" />
+          <span className="text-outline">{'\u2192'}</span>
+          <FormattedValue value={entry.newValue} className="text-primary font-semibold" />
         </span>
       );
   }
 }
-
-/* -- Formatted Value -------------------------------------- */
 
 function FormattedValue({
   value,
@@ -209,19 +197,17 @@ function FormattedValue({
   return <span className={className}>{String(value)}</span>;
 }
 
-/* -- Style Constants -------------------------------------- */
-
 const BG_CLASSES: Record<DiffEntryType, string> = {
-  added: 'bg-emerald-500/5',
-  removed: 'bg-red-500/5',
-  changed: 'bg-amber-500/5',
+  added: 'bg-primary-container/10',
+  removed: 'bg-error-container/15',
+  changed: 'bg-surface-container',
   unchanged: '',
 };
 
 const BORDER_CLASSES: Record<DiffEntryType, string> = {
-  added: 'border-emerald-500/40',
-  removed: 'border-red-500/40',
-  changed: 'border-amber-500/40',
+  added: 'border-primary',
+  removed: 'border-error',
+  changed: 'border-[#fc7c78]',
   unchanged: 'border-transparent',
 };
 
@@ -233,8 +219,8 @@ const ICON_CHARS: Record<DiffEntryType, string> = {
 };
 
 const ICON_COLORS: Record<DiffEntryType, string> = {
-  added: 'text-emerald-400',
-  removed: 'text-red-400',
-  changed: 'text-amber-400',
-  unchanged: 'text-zinc-700',
+  added: 'text-primary',
+  removed: 'text-error',
+  changed: 'text-[#fc7c78]',
+  unchanged: 'text-outline',
 };

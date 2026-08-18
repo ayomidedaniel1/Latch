@@ -18,18 +18,18 @@ export function Navbar({
   user?: UserSession;
 }) {
   return (
-    <header className="border-b border-latch-border bg-latch-bg/95 backdrop-blur-md sticky top-0 z-50">
-      <div className="max-w-6xl mx-auto px-6 py-3.5 flex items-center justify-between">
+    <header className="border-b border-outline-variant bg-surface-container-lowest/80 backdrop-blur-xl sticky top-0 z-50 transition-all">
+      <div className="max-w-6xl mx-auto px-6 py-3 flex items-center justify-between">
         {/* Brand Logo & Title */}
         <Link href="/" className="flex items-center gap-2.5 group">
           <Image
             src="/logo.png"
             alt="Latch Logo"
-            width={26}
-            height={26}
-            className="rounded-md transition-transform group-hover:scale-105"
+            width={28}
+            height={28}
+            className="rounded-lg transition-transform group-hover:scale-105 shadow-sm shadow-primary-container/20"
           />
-          <span className="font-semibold text-lg tracking-tight text-latch-primary">
+          <span className="font-bold text-lg tracking-tight text-on-surface group-hover:text-primary transition-colors">
             Latch
           </span>
         </Link>
@@ -39,13 +39,13 @@ export function Navbar({
           <div className="hidden md:flex items-center gap-6">
             <Link
               href="/docs"
-              className="text-sm text-latch-secondary hover:text-latch-primary transition-colors"
+              className="text-sm font-medium text-on-surface-variant hover:text-primary transition-colors"
             >
               Docs
             </Link>
             <Link
               href="/changelog"
-              className="text-sm text-latch-secondary hover:text-latch-primary transition-colors"
+              className="text-sm font-medium text-on-surface-variant hover:text-primary transition-colors"
             >
               Changelog
             </Link>
@@ -53,7 +53,7 @@ export function Navbar({
               href="https://github.com/ayomidedaniel1/Latch/issues"
               target="_blank"
               rel="noopener noreferrer"
-              className="text-sm text-latch-secondary hover:text-latch-primary transition-colors"
+              className="text-sm font-medium text-on-surface-variant hover:text-primary transition-colors"
             >
               Report an issue
             </a>
@@ -67,7 +67,7 @@ export function Navbar({
             <div className="flex items-center gap-3">
               <Link
                 href="/dashboard"
-                className="rounded-full bg-latch-card border border-latch-border hover:border-latch-border-hover px-4 py-1.5 text-xs font-semibold text-latch-primary transition-all hover:bg-latch-card-hover"
+                className="rounded-lg bg-surface-container border border-outline-variant hover:border-primary px-3.5 py-1.5 text-xs font-semibold text-on-surface hover:text-primary transition-all shadow-sm"
               >
                 Dashboard
               </Link>
@@ -83,13 +83,13 @@ export function Navbar({
             <div className="flex items-center gap-3">
               <Link
                 href="/signin?callbackUrl=/dashboard"
-                className="text-xs font-medium text-latch-secondary hover:text-latch-primary transition-colors hidden sm:block"
+                className="text-xs font-medium text-on-surface-variant hover:text-on-surface transition-colors hidden sm:block"
               >
                 Log In
               </Link>
               <Link
                 href="/signin?callbackUrl=/dashboard"
-                className="rounded-full bg-latch-mint text-latch-bg hover:bg-latch-mint-hover px-4 py-1.5 text-xs font-bold transition-all shadow-md cta-glow"
+                className="rounded-lg bg-primary-container text-on-primary-container hover:bg-primary-fixed px-4 py-1.5 text-xs font-bold transition-all shadow-md cta-glow flex items-center gap-1.5"
               >
                 Get Started
               </Link>

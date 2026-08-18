@@ -51,9 +51,11 @@ export function ReplayButton({
   }
 
   return (
-    <div className="border border-zinc-800 rounded-lg p-3 bg-zinc-900/50 space-y-3">
+    <div className="border border-outline-variant rounded-xl p-3.5 bg-surface-container-low/70 space-y-3 shadow-sm">
       <div className="flex flex-col gap-1.5">
-        <label className="text-xs font-medium text-zinc-500">Replay Destination URL</label>
+        <label className="text-[10px] font-mono font-semibold text-outline uppercase tracking-wider">
+          Replay Destination URL
+        </label>
         <div className="flex gap-2">
           <input
             type="url"
@@ -61,12 +63,12 @@ export function ReplayButton({
             onChange={(e) => setDestinationUrl(e.target.value)}
             placeholder="http://localhost:3000/api/process"
             disabled={loading}
-            className="flex-1 rounded-md border border-zinc-800 bg-zinc-950 px-3 py-1.5 text-xs font-mono text-zinc-200 placeholder:text-zinc-600 focus:outline-none focus:ring-1 focus:ring-emerald-500/50 focus:border-emerald-500/50"
+            className="flex-1 rounded-lg border border-outline-variant bg-surface-container-lowest px-3 py-1.5 text-xs font-mono text-on-surface placeholder:text-outline focus:outline-none focus:border-primary transition-all disabled:opacity-50"
           />
           <button
             onClick={handleReplay}
             disabled={loading}
-            className="rounded-md bg-zinc-100 px-3 py-1.5 text-xs font-medium text-zinc-950 hover:bg-zinc-200 disabled:opacity-40 transition-colors shrink-0"
+            className="rounded-lg bg-primary-container text-on-primary-container hover:bg-primary-fixed px-3.5 py-1.5 text-xs font-bold transition-all shrink-0 cursor-pointer disabled:opacity-50 active:scale-[0.98] shadow-sm"
           >
             {loading ? 'Replaying...' : 'Replay'}
           </button>
@@ -74,34 +76,34 @@ export function ReplayButton({
       </div>
 
       {error && (
-        <div className="text-xs text-red-400 bg-red-500/5 border border-red-500/20 rounded p-2 font-mono">
+        <div className="text-xs text-error bg-error-container/20 border border-error/30 rounded-lg p-2 font-mono">
           Error: {error}
         </div>
       )}
 
       {result && (
-        <div className="border border-zinc-800 rounded bg-zinc-900 p-3 space-y-2">
+        <div className="border border-outline-variant rounded-lg bg-surface-container-lowest p-3 space-y-2">
           <div className="flex justify-between items-center text-xs">
-            <span className="font-medium text-zinc-500">Response Status</span>
+            <span className="font-medium text-outline">Response Status</span>
             <div className="flex items-center gap-2">
               <span
-                className={`px-1.5 py-0.5 rounded text-[10px] font-bold ${
+                className={`px-2 py-0.5 rounded-full text-[10px] font-bold font-mono ${
                   result.status >= 200 && result.status < 300
-                    ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20'
-                    : 'bg-red-500/10 text-red-400 border border-red-500/20'
+                    ? 'bg-primary-container/15 text-primary border border-primary-container/30'
+                    : 'bg-error-container/20 text-error border border-error/30'
                 }`}
               >
-                {result.status}
+                {result.status} {result.status >= 200 && result.status < 300 ? 'OK' : 'ERR'}
               </span>
-              <span className="text-zinc-500 font-mono">{result.duration}ms</span>
+              <span className="text-outline font-mono text-[11px]">{result.duration}ms</span>
             </div>
           </div>
           {result.body && (
             <div>
-              <span className="text-[10px] font-medium text-zinc-500 uppercase tracking-wider block mb-1">
+              <span className="text-[9px] font-mono font-semibold text-outline uppercase tracking-wider block mb-1">
                 Body
               </span>
-              <pre className="bg-zinc-950 rounded p-2 overflow-x-auto text-[11px] font-mono leading-normal text-zinc-300 max-h-40">
+              <pre className="bg-surface-container rounded-lg p-2 overflow-x-auto text-[11px] font-mono leading-normal text-on-surface-variant max-h-40 border border-outline-variant/40">
                 {result.body}
               </pre>
             </div>
