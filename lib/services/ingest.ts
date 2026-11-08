@@ -8,12 +8,14 @@ import type { WebhookPayload } from '@/lib/types';
  */
 export async function enqueueWebhook(
   projectId: string,
+  method: string,
   headers: Record<string, string>,
   rawBody: string,
   sourceIp: string | null,
 ): Promise<void> {
   const payload: WebhookPayload = {
     projectId,
+    method,
     headers,
     raw: rawBody,
     receivedAt: new Date().toISOString(),

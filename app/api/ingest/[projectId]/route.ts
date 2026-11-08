@@ -5,9 +5,9 @@ import { z } from 'zod';
 const uuidSchema = z.string().uuid();
 const RATE_LIMIT_PER_MINUTE = 100;
 
-export async function POST(
+async function handleIngest(
   req: Request,
-  { params }: { params: Promise<{ projectId: string; }>; }
+  { params }: { params: Promise<{ projectId: string }> },
 ) {
   const { projectId } = await params;
 
@@ -43,8 +43,13 @@ export async function POST(
     headers[key] = value;
   });
 
-  // Enqueue and return 200 immediately (sourceIp already extracted above for rate limiting)
-  await enqueueWebhook(projectId, headers, raw, sourceIp === 'unknown' ? null : sourceIp);
+  // Enqueue and return 200 immediately — processing happens in the BLPOP worker
+  await enqueueWebhook(projectId, req.method, headers, raw, sourceIp === 'unknown' ? null : sourceIp);
 
   return Response.json({ received: true }, { status: 200 });
 }
+
+export const POST   = handleIngest;
+export const PUT    = handleIngest;
+export const PATCH  = handleIngest;
+export const DELETE = handleIngest;

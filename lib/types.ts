@@ -1,12 +1,3 @@
-export type Project = {
-  id: string;
-  user_id?: string;
-  name: string;
-  destination_url?: string | null;
-  cli_token: string;
-  created_at: string;
-};
-
 export type WebhookEvent = {
   id: string;
   method: string;
@@ -23,6 +14,7 @@ export type WebhookEvent = {
  */
 export type WebhookPayload = {
   projectId: string;
+  method: string;
   headers: Record<string, string>;
   raw: string;
   receivedAt: string;

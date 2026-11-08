@@ -13,7 +13,7 @@ import type { WebhookPayload } from '@/lib/types';
 export async function processQueueItem(
   payload: WebhookPayload,
 ): Promise<string | null> {
-  const { projectId, headers, raw, receivedAt, sourceIp } = payload;
+  const { projectId, method, headers, raw, receivedAt, sourceIp } = payload;
 
   // Validate that the project exists
   const projectExists = await projectsRepo.exists(projectId);
@@ -33,7 +33,7 @@ export async function processQueueItem(
   // Insert the event
   const event = await eventsRepo.insert({
     projectId,
-    method: 'POST',
+    method: method ?? 'POST',
     headers,
     body,
     rawBody: raw,
