@@ -105,6 +105,7 @@ const DESTINATION_URL = 'https://receiver.example.com/webhook-endpoint';
  * SELECT id, name, destination_url, cli_token, created_at FROM projects WHERE id = $1 AND user_id = $2
  */
 interface MockProjectOwnershipRow {
+  [key: string]: unknown;
   id: string;
   name: string;
   destination_url: string | null;
@@ -125,6 +126,7 @@ const mockProjectRow: MockProjectOwnershipRow = {
  * SELECT id, project_id, method, headers, raw_body FROM events WHERE id = $1 LIMIT 1
  */
 interface MockEventForReplayRow {
+  [key: string]: unknown;
   id: string;
   project_id: string;
   method: string;

@@ -1,6 +1,9 @@
+'use client';
+
 import Link from 'next/link';
 import Image from 'next/image';
-import { signOut } from '@/auth';
+import { usePathname } from 'next/navigation';
+import { signOut } from 'next-auth/react';
 import { ProfileDropdown } from './ProfileDropdown';
 import { GitHubStarButton } from './GitHubStarButton';
 
@@ -17,85 +20,105 @@ export function Navbar({
   isAuthenticated: boolean;
   user?: UserSession;
 }) {
+  const pathname = usePathname();
+
+  const isDashboard = pathname.startsWith('/dashboard');
+  const isDocs = pathname.startsWith('/docs');
+  const isChangelog = pathname.startsWith('/changelog');
+
   return (
-    <header className="border-b border-latch-border bg-latch-bg/95 backdrop-blur-md sticky top-0 z-50">
-      <div className="max-w-6xl mx-auto px-6 py-3.5 flex items-center justify-between">
-        {/* Brand Logo & Title */}
-        <Link href="/" className="flex items-center gap-2.5 group">
+    <header className="border-b border-[#27272a] bg-[#000000]/90 backdrop-blur-md sticky top-0 z-50 select-none">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 h-14 flex items-center justify-between gap-4">
+        {/* Brand Logo & Title (matching favicon) */}
+        <Link href="/" className="flex items-center gap-2.5 group shrink-0">
           <Image
             src="/logo.png"
             alt="Latch Logo"
-            width={26}
-            height={26}
-            className="rounded-md transition-transform group-hover:scale-105"
+            width={24}
+            height={24}
+            className="rounded transition-transform group-hover:scale-105"
+            priority
           />
-          <span className="font-semibold text-lg tracking-tight text-latch-primary">
+          <span className="font-bold text-base sm:text-lg tracking-tight text-white group-hover:text-[#10b981] transition-colors">
             Latch
           </span>
         </Link>
 
-        {/* Minimal Nav Items */}
-        <nav className="flex items-center gap-6">
-          <div className="hidden md:flex items-center gap-6">
+        {/* Clean, Non-Redundant Navigation Links */}
+        <nav className="flex items-center gap-1 sm:gap-2 text-xs font-medium">
+          {isAuthenticated && (
             <Link
-              href="/docs"
-              className="text-sm text-latch-secondary hover:text-latch-primary transition-colors"
+              href="/dashboard"
+              className={`px-3 py-1.5 rounded transition-colors ${
+                isDashboard
+                  ? 'text-[#10b981] font-semibold bg-[#10b981]/10 border border-[#10b981]/25'
+                  : 'text-[#9ca3af] hover:text-[#e5e1e4] hover:bg-[#131315]'
+              }`}
             >
-              Docs
+              Dashboard
             </Link>
-            <Link
-              href="/changelog"
-              className="text-sm text-latch-secondary hover:text-latch-primary transition-colors"
-            >
-              Changelog
-            </Link>
-            <a
-              href="https://github.com/ayomidedaniel1/Latch/issues"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-sm text-latch-secondary hover:text-latch-primary transition-colors"
-            >
-              Report an issue
-            </a>
-          </div>
+          )}
 
-          {/* Fixed-width Non-twitching GitHub Star Badge */}
+          <Link
+            href="/docs"
+            className={`px-3 py-1.5 rounded transition-colors ${
+              isDocs
+                ? 'text-[#10b981] font-semibold bg-[#10b981]/10 border border-[#10b981]/25'
+                : 'text-[#9ca3af] hover:text-[#e5e1e4] hover:bg-[#131315]'
+            }`}
+          >
+            Docs
+          </Link>
+
+          <Link
+            href="/changelog"
+            className={`px-3 py-1.5 rounded transition-colors ${
+              isChangelog
+                ? 'text-[#10b981] font-semibold bg-[#10b981]/10 border border-[#10b981]/25'
+                : 'text-[#9ca3af] hover:text-[#e5e1e4] hover:bg-[#131315]'
+            }`}
+          >
+            Changelog
+          </Link>
+
+          <a
+            href="https://github.com/ayomidedaniel1/Latch/issues"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="px-3 py-1.5 text-[#9ca3af] hover:text-[#e5e1e4] hover:bg-[#131315] rounded transition-colors hidden sm:block"
+          >
+            Support
+          </a>
+        </nav>
+
+        {/* Right: Star Badge & Authentication */}
+        <div className="flex items-center gap-3">
           <GitHubStarButton />
 
-          {/* User Actions */}
           {isAuthenticated ? (
-            <div className="flex items-center gap-3">
-              <Link
-                href="/dashboard"
-                className="rounded-full bg-latch-card border border-latch-border hover:border-latch-border-hover px-4 py-1.5 text-xs font-semibold text-latch-primary transition-all hover:bg-latch-card-hover"
-              >
-                Dashboard
-              </Link>
-              <ProfileDropdown
-                user={user}
-                signOutAction={async () => {
-                  'use server';
-                  await signOut({ redirectTo: '/' });
-                }}
-              />
-            </div>
+            <ProfileDropdown
+              user={user}
+              signOutAction={async () => {
+                await signOut({ callbackUrl: '/' });
+              }}
+            />
           ) : (
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-2">
               <Link
-                href="/signin?callbackUrl=/dashboard"
-                className="text-xs font-medium text-latch-secondary hover:text-latch-primary transition-colors hidden sm:block"
+                href="/signin"
+                className="text-xs font-medium text-[#9ca3af] hover:text-[#e5e1e4] px-2.5 py-1.5 transition-colors hidden sm:block"
               >
-                Log In
+                Sign In
               </Link>
               <Link
-                href="/signin?callbackUrl=/dashboard"
-                className="rounded-full bg-latch-mint text-latch-bg hover:bg-latch-mint-hover px-4 py-1.5 text-xs font-bold transition-all shadow-md cta-glow"
+                href="/signin"
+                className="bg-[#10b981] hover:bg-[#059669] text-[#000000] font-semibold px-3.5 py-1.5 rounded text-xs transition-colors glow-emerald"
               >
                 Get Started
               </Link>
             </div>
           )}
-        </nav>
+        </div>
       </div>
     </header>
   );

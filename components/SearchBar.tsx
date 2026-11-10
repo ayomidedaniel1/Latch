@@ -82,13 +82,11 @@ export function SearchBar({ projectId, onResults, onClear }: SearchBarProps) {
   };
 
   return (
-    <div className="relative w-full mb-4">
+    <div className="relative w-full">
       <div className="relative flex items-center">
-        {/* Search Icon */}
-        <div className="absolute left-3.5 flex items-center pointer-events-none text-zinc-500">
-          <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-            <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-          </svg>
+        {/* Monospace Code Prefix {} */}
+        <div className="absolute left-3 flex items-center pointer-events-none font-mono text-xs font-bold text-[#10b981]">
+          &#123;&#125;
         </div>
 
         {/* Monospace Input */}
@@ -96,32 +94,32 @@ export function SearchBar({ projectId, onResults, onClear }: SearchBarProps) {
           type="text"
           value={query}
           onChange={(e) => handleInputChange(e.target.value)}
-          placeholder="Search payloads, headers, or key paths (e.g. data.object.amount)..."
-          className="w-full bg-zinc-950 border border-zinc-900 focus:border-zinc-800 rounded-lg pl-10 pr-24 py-2 text-sm text-zinc-100 placeholder-zinc-500 outline-none transition-all font-mono"
+          placeholder="JSONB Filter (e.g. data.status or event.type)..."
+          className="w-full bg-[#0e0e10] border border-[#27272a] focus:border-[#10b981] rounded pl-8 pr-24 py-2 text-xs text-[#e5e1e4] placeholder-[#71717a] outline-none transition-all font-mono"
         />
 
         {/* Action area: badge, spinner, clear button */}
-        <div className="absolute right-3.5 flex items-center gap-2">
+        <div className="absolute right-3 flex items-center gap-2">
           {loading && (
-            <svg className="animate-spin h-4.5 w-4.5 text-emerald-500" fill="none" viewBox="0 0 24 24">
+            <svg className="animate-spin h-3.5 w-3.5 text-[#10b981]" fill="none" viewBox="0 0 24 24">
               <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
               <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
             </svg>
           )}
 
           {resultCount !== null && !loading && (
-            <span className="text-[10px] font-mono font-bold bg-zinc-900 border border-zinc-800 text-zinc-400 px-2 py-0.5 rounded-md">
-              {resultCount} {resultCount === 1 ? 'result' : 'results'}
+            <span className="text-[10px] font-mono font-bold bg-[#1c1b1d] border border-[#27272a] text-[#10b981] px-1.5 py-0.5 rounded">
+              {resultCount} {resultCount === 1 ? 'match' : 'matches'}
             </span>
           )}
 
           {query && (
             <button
               onClick={handleClear}
-              className="text-zinc-500 hover:text-zinc-300 transition-colors p-0.5 rounded hover:bg-zinc-900 cursor-pointer"
-              title="Clear search"
+              className="text-[#71717a] hover:text-white transition-colors p-0.5 rounded cursor-pointer"
+              title="Clear filter"
             >
-              <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+              <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
               </svg>
             </button>

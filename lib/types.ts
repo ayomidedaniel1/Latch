@@ -31,3 +31,12 @@ export type DiffEntry = {
   oldValue?: unknown;
   newValue?: unknown;
 };
+
+export type Project = {
+  id: string;
+  name: string;
+  destination_url: string | null;
+  cli_token: string;
+  created_at: string;
+  user_id?: string;
+};

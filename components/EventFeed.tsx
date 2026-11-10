@@ -67,13 +67,10 @@ export function EventFeed({
 
   function handleCompareClick(eventId: string) {
     setCompareIds((prev) => {
-      // Already selected? Deselect it.
       if (prev[0] === eventId) return [prev[1], null];
       if (prev[1] === eventId) return [prev[0], null];
-      // Fill first empty slot
       if (prev[0] === null) return [eventId, prev[1]];
       if (prev[1] === null) return [prev[0], eventId];
-      // Both filled: replace B
       return [prev[0], eventId];
     });
   }
@@ -81,7 +78,6 @@ export function EventFeed({
   function toggleCompareMode() {
     setCompareMode((prev) => {
       if (prev) {
-        // Exiting compare mode: clear selections
         setCompareIds([null, null]);
       }
       return !prev;
@@ -94,181 +90,190 @@ export function EventFeed({
     return null;
   }
 
-  return (
-    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-      {/* Sidebar */}
-      <div>
-        {/* Toolbar */}
-        <div className="flex items-center justify-between mb-4">
-          <div className="flex items-center gap-2 text-sm text-zinc-400">
-            {searchResults !== null ? (
-              <div className="flex items-center gap-1.5 font-mono text-[10px] text-blue-400 uppercase tracking-wider bg-blue-500/10 border border-blue-500/20 px-2 py-0.5 rounded">
-                <span className="h-1.5 w-1.5 rounded-full bg-blue-400" />
-                Search Results
-              </div>
-            ) : (
-              <div className="flex items-center gap-3">
-                <div className="flex items-center gap-1.5">
-                  <StatusIndicator connected={connected} />
-                  <span>{connected ? 'Live' : 'Reconnecting\u2026'}</span>
-                </div>
-                <div className="h-3 w-px bg-zinc-800" />
-                <TunnelStatus cliConnected={cliConnected} />
-              </div>
-            )}
-          </div>
-          {displayedEvents.length >= 2 && (
-            <button
-              onClick={toggleCompareMode}
-              className={`text-[11px] font-mono px-2.5 py-1 rounded-md border transition-colors cursor-pointer ${
-                compareMode
-                  ? 'bg-zinc-800 border-zinc-700 text-zinc-200'
-                  : 'border-zinc-800 text-zinc-500 hover:text-zinc-300 hover:border-zinc-700'
-              }`}
-            >
-              {compareMode ? 'Exit Compare' : 'Compare'}
-            </button>
-          )}
-        </div>
+  function formatTime(dateStr: string) {
+    const d = new Date(dateStr);
+    const time = d.toTimeString().split(' ')[0];
+    const ms = String(d.getMilliseconds()).padStart(3, '0');
+    return `${time}.${ms}`;
+  }
 
-        {/* Search Bar */}
+  function getEventPath(event: WebhookEvent) {
+    const method = event.method || 'POST';
+    const custom =
+      event.headers['stripe-event-type'] ||
+      event.headers['x-github-event'] ||
+      event.headers['x-event-type'] ||
+      event.headers['x-event-name'];
+    if (custom) return `${method} /${custom}`;
+
+    if (event.body && typeof event.body === 'object') {
+      const b = event.body as Record<string, unknown>;
+      if (typeof b.type === 'string') return `${method} /${b.type}`;
+      if (typeof b.event === 'string') return `${method} /${b.event}`;
+    }
+    return `${method} /webhook`;
+  }
+
+  return (
+    <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 items-start">
+      {/* Left Column: Event Stream & List (5 cols) */}
+      <div className="lg:col-span-5 space-y-3">
+        {/* Search Bar matching reference */}
         <SearchBar
           projectId={projectId}
           onResults={(results) => setSearchResults(results)}
           onClear={() => setSearchResults(null)}
         />
 
-        {/* Compare mode hint */}
+        {/* Toolbar Bar: Live Stream & Compare Toggle matching screend.png */}
+        <div className="flex items-center justify-between px-1 py-1 text-xs">
+          <div className="flex items-center gap-3">
+            <div className="flex items-center gap-2">
+              <span className="relative flex h-2 w-2">
+                {connected && (
+                  <span className="absolute inline-flex h-full w-full rounded-full bg-[#10b981] opacity-75 animate-ping" />
+                )}
+                <span
+                  className={`relative inline-flex h-2 w-2 rounded-full ${
+                    connected ? 'bg-[#10b981]' : 'bg-[#ef4444]'
+                  }`}
+                />
+              </span>
+              <span className="font-semibold text-white tracking-tight text-xs">
+                Live Stream
+              </span>
+            </div>
+            <div className="h-3 w-px bg-[#27272a]" />
+            <TunnelStatus cliConnected={cliConnected} />
+          </div>
+
+          {/* Compare Toggle Switch */}
+          <div className="flex items-center gap-2">
+            <span className="text-[11px] font-mono text-[#71717a]">Compare</span>
+            <button
+              type="button"
+              onClick={toggleCompareMode}
+              className={`w-8 h-4.5 rounded-full transition-colors relative cursor-pointer p-0.5 border ${
+                compareMode
+                  ? 'bg-[#10b981]/20 border-[#10b981]'
+                  : 'bg-[#1c1b1d] border-[#27272a]'
+              }`}
+              title="Toggle payload comparison"
+            >
+              <div
+                className={`w-3 h-3 rounded-full transition-transform ${
+                  compareMode
+                    ? 'translate-x-3.5 bg-[#10b981]'
+                    : 'translate-x-0 bg-[#71717a]'
+                }`}
+              />
+            </button>
+          </div>
+        </div>
+
+        {/* Compare Mode Hint */}
         {compareMode && !bothSelected && (
-          <div className="mb-3 text-[10px] text-zinc-500 font-mono bg-zinc-900/50 border border-zinc-800 rounded-md px-3 py-2">
-            Select two events to compare their payloads.
+          <div className="text-[11px] font-mono text-[#9ca3af] bg-[#131315] border border-[#27272a] rounded px-3 py-1.5 flex items-center justify-between">
+            <span>Select 2 events to compare schemas</span>
+            <span className="text-[#10b981]">{compareIds[0] ? '1/2 selected' : '0/2 selected'}</span>
           </div>
         )}
 
         {/* Event List */}
         {displayedEvents.length === 0 ? (
-          <div className="rounded-xl border border-zinc-800 bg-zinc-900/30 p-6 space-y-4">
+          <div className="glass-panel rounded-lg border border-[#27272a] bg-[#131315]/80 p-8 text-center space-y-3">
             {searchResults !== null ? (
-              <p className="text-sm text-zinc-500">No matching webhooks found for this search query.</p>
+              <p className="text-xs font-mono text-[#71717a]">
+                No webhooks match the current JSONB filter.
+              </p>
             ) : (
               <>
-                <div className="flex items-center gap-3">
-                  <span className="relative flex h-3 w-3">
-                    <span className="absolute inline-flex h-full w-full rounded-full bg-zinc-500 opacity-50 animate-ping" />
-                    <span className="relative inline-flex h-3 w-3 rounded-full bg-zinc-600" />
+                <div className="flex items-center justify-center gap-2">
+                  <span className="relative flex h-2.5 w-2.5">
+                    <span className="absolute inline-flex h-full w-full rounded-full bg-[#10b981] opacity-60 animate-ping" />
+                    <span className="relative inline-flex h-2.5 w-2.5 rounded-full bg-[#10b981]" />
                   </span>
-                  <h3 className="text-sm font-semibold text-zinc-300">No events yet</h3>
+                  <span className="text-xs font-semibold text-white">Listening for events...</span>
                 </div>
-                <p className="text-xs text-zinc-500 leading-relaxed">
-                  Events will show up here as soon as your webhook provider sends one to your Ingest URL.
+                <p className="text-xs text-[#71717a] max-w-xs mx-auto leading-relaxed">
+                  Send a webhook to this project&apos;s Ingest URL or run the Latch Tunnel CLI.
                 </p>
-                <details className="group">
-                  <summary className="text-[11px] text-zinc-500 hover:text-zinc-300 cursor-pointer transition-colors font-medium select-none">
-                    Not seeing anything?
-                  </summary>
-                  <div className="mt-3 space-y-2 text-xs text-zinc-500 leading-relaxed pl-1">
-                    <p>Check that you pasted the full Ingest URL (including <code className="text-zinc-400 bg-zinc-900 px-1 rounded">/api/ingest/{projectId}</code>) into your provider&apos;s webhook settings.</p>
-                    <p>Some providers won&apos;t send anything until you trigger a test event manually (Stripe has a &quot;Send test webhook&quot; button, for example).</p>
-                    <p>You can also test it yourself:</p>
-                    <div className="rounded-lg border border-zinc-800 bg-zinc-950 p-3 font-mono text-[11px] text-zinc-400 overflow-x-auto whitespace-pre">{`curl -X POST ${typeof window !== 'undefined' ? window.location.origin : 'https://your-domain'}/api/ingest/${projectId} \\
-  -H "Content-Type: application/json" \\
-  -d '{"test": true}'`}</div>
-                  </div>
-                </details>
-                <a href="/docs#troubleshooting" className="inline-block text-[11px] text-emerald-400 hover:text-emerald-300 font-semibold transition-colors mt-1">
-                  Stuck? Check the troubleshooting guide &rarr;
-                </a>
               </>
             )}
           </div>
         ) : (
-          <ul className="space-y-1.5">
+          <div className="space-y-2 overflow-y-auto max-h-[calc(100vh-220px)] pr-1">
             {displayedEvents.map((event) => {
               const badge = compareMode ? getCompareBadge(event.id) : null;
               const isSelected = !compareMode && selected?.id === event.id;
 
               return (
-                <li key={event.id}>
-                  <button
-                    onClick={() =>
-                      compareMode
-                        ? handleCompareClick(event.id)
-                        : setSelectedId(event.id)
-                    }
-                    className={`w-full text-left rounded-lg border px-3 py-2 text-sm transition-colors relative ${
-                      badge === 'A'
-                        ? 'border-blue-500/40 bg-blue-500/5 text-zinc-100'
-                        : badge === 'B'
-                          ? 'border-purple-500/40 bg-purple-500/5 text-zinc-100'
-                          : isSelected
-                            ? 'border-emerald-500/40 bg-zinc-900 text-zinc-100'
-                            : 'border-zinc-800 hover:border-zinc-700 text-zinc-300'
-                    }`}
-                  >
-                    <div className="flex items-center justify-between">
-                      <div className="font-mono text-xs text-zinc-500">
-                        {new Date(event.received_at).toLocaleTimeString()}
-                      </div>
-                      {badge && <CompareBadge label={badge} />}
-                    </div>
-                    <div className="truncate font-mono text-xs">
-                      {event.headers['content-type'] ?? 'unknown content-type'}
-                    </div>
-                  </button>
-                </li>
+                <button
+                  key={event.id}
+                  onClick={() =>
+                    compareMode
+                      ? handleCompareClick(event.id)
+                      : setSelectedId(event.id)
+                  }
+                  className={`w-full text-left rounded-md border p-3 transition-all cursor-pointer relative group ${
+                    badge === 'A'
+                      ? 'border-blue-500/60 bg-blue-500/10'
+                      : badge === 'B'
+                        ? 'border-purple-500/60 bg-purple-500/10'
+                        : isSelected
+                          ? 'border-[#10b981] bg-[#161618] shadow-md'
+                          : 'border-[#27272a] bg-[#131315]/90 hover:border-[#3f3f46] hover:bg-[#18181b]'
+                  }`}
+                >
+                  {/* Top row: Path & Status */}
+                  <div className="flex items-center justify-between gap-2 mb-1.5">
+                    <span className={`font-mono text-xs font-semibold truncate ${
+                      isSelected ? 'text-[#10b981]' : 'text-white group-hover:text-[#10b981]'
+                    }`}>
+                      {getEventPath(event)}
+                    </span>
+                    {badge ? (
+                      <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded border font-mono ${
+                        badge === 'A'
+                          ? 'bg-blue-500/20 text-blue-400 border-blue-500/40'
+                          : 'bg-purple-500/20 text-purple-400 border-purple-500/40'
+                      }`}>
+                        EVENT {badge}
+                      </span>
+                    ) : (
+                      <span className="font-mono text-[10px] font-bold px-1.5 py-0.5 rounded bg-[#10b981]/15 text-[#10b981] border border-[#10b981]/30 shrink-0">
+                        200 OK
+                      </span>
+                    )}
+                  </div>
+
+                  {/* Bottom row: Request ID & Timestamp */}
+                  <div className="flex items-center justify-between font-mono text-[11px] text-[#71717a]">
+                    <span className="truncate">req_{event.id.slice(0, 8)}</span>
+                    <span className="shrink-0">{formatTime(event.received_at)}</span>
+                  </div>
+                </button>
               );
             })}
-          </ul>
+          </div>
         )}
       </div>
 
-      {/* Right Panel */}
-      <div>
+      {/* Right Column: Event Inspector / Diff Viewer (7 cols) */}
+      <div className="lg:col-span-7">
         {compareMode && bothSelected ? (
           <DiffViewer eventA={eventA} eventB={eventB} />
+        ) : selected ? (
+          <EventViewer
+            event={selected}
+            destinationUrl={destinationUrl || ''}
+          />
         ) : (
-          selected && (
-            <EventViewer
-              event={selected}
-              destinationUrl={destinationUrl || ''}
-            />
-          )
+          <div className="glass-panel rounded-lg border border-[#27272a] bg-[#131315] p-12 text-center text-[#71717a] text-xs font-mono">
+            No event selected
+          </div>
         )}
       </div>
     </div>
-  );
-}
-
-/* -- Status Indicator ------------------------------------- */
-
-function StatusIndicator({ connected }: { connected: boolean }) {
-  return (
-    <span className="relative flex h-2 w-2">
-      {connected && (
-        <span className="absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75 animate-ping" />
-      )}
-      <span
-        className={`relative inline-flex h-2 w-2 rounded-full ${
-          connected ? 'bg-emerald-500' : 'bg-red-500'
-        }`}
-      />
-    </span>
-  );
-}
-
-/* -- Compare Badge ---------------------------------------- */
-
-function CompareBadge({ label }: { label: 'A' | 'B' }) {
-  const colors =
-    label === 'A'
-      ? 'bg-blue-500/10 text-blue-400 border-blue-500/20'
-      : 'bg-purple-500/10 text-purple-400 border-purple-500/20';
-
-  return (
-    <span
-      className={`text-[9px] font-bold px-1.5 py-0.5 rounded border font-mono ${colors}`}
-    >
-      {label}
-    </span>
   );
 }
