@@ -3,6 +3,8 @@ import GitHub from 'next-auth/providers/github';
 import PostgresAdapter from '@auth/pg-adapter';
 import { pool } from '@/lib/db-local';
 
+import type { Session, User } from 'next-auth';
+
 export const { handlers, auth, signIn, signOut } = NextAuth({
   secret: process.env.AUTH_SECRET,
   trustHost: true,
@@ -17,7 +19,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
     signIn: '/signin',
   },
   callbacks: {
-    session({ session, user }) {
+    session({ session, user }: { session: Session; user: User }) {
       if (session.user && user?.id) {
         session.user.id = user.id;
       }

@@ -1,31 +1,34 @@
 @import "tailwindcss";
 
 :root {
-  --background: #07080b;
-  --foreground: #f4f5f7;
+  --background: #000000;
+  --foreground: #e5e1e4;
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --font-sans: var(--font-inter), -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  --font-mono: var(--font-jetbrains-mono), ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
 
-  /* Custom Latch Palette Tokens */
-  --color-latch-bg: #07080b;
-  --color-latch-card: #0e1017;
-  --color-latch-card-hover: #151822;
-  --color-latch-border: #1e2330;
-  --color-latch-border-hover: #2b3245;
+  /* Latch Brand Tokens from DESIGN.md */
+  --color-latch-bg: #000000;
+  --color-latch-card: #131315;
+  --color-latch-card-hover: #1c1b1d;
+  --color-latch-surface-high: #201f22;
+  --color-latch-border: #27272a;
+  --color-latch-border-subtle: #1c1b1d;
+  --color-latch-border-hover: #3f3f46;
 
-  --color-latch-primary: #f4f5f7;
-  --color-latch-secondary: #b0b8c8;
-  --color-latch-muted: #6b768e;
+  --color-latch-primary: #e5e1e4;
+  --color-latch-secondary: #9ca3af;
+  --color-latch-muted: #71717a;
 
-  --color-latch-mint: #10e599;
-  --color-latch-mint-hover: #05c781;
-  --color-latch-mint-bg: #0b291e;
-  --color-latch-mint-border: #14593f;
+  --color-latch-mint: #10b981;
+  --color-latch-mint-hover: #059669;
+  --color-latch-mint-bg: rgba(16, 185, 129, 0.1);
+  --color-latch-mint-border: rgba(16, 185, 129, 0.25);
+  --color-latch-emerald-glow: #4edea3;
 
   --color-provider-stripe: #635bff;
   --color-provider-github: #388bfd;
@@ -33,36 +36,77 @@
 }
 
 body {
-  background: var(--color-latch-bg);
-  color: var(--color-latch-primary);
-  font-family: var(--font-sans), Arial, Helvetica, sans-serif;
+  background: #000000;
+  color: #e5e1e4;
+  font-family: var(--font-sans);
 }
 
-/* Smooth scrollbar for dark backgrounds */
+/* OLED Technical Dot Grid */
+.bg-dot-grid {
+  background-image: radial-gradient(rgba(255, 255, 255, 0.08) 1px, transparent 1px);
+  background-size: 24px 24px;
+}
+
+/* Glassmorphic Technical Card */
+.glass-panel {
+  background: rgba(19, 19, 21, 0.82);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid #27272a;
+  position: relative;
+}
+
+.glass-panel::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: linear-gradient(90deg, rgba(255, 255, 255, 0.15) 0%, rgba(255, 255, 255, 0.05) 50%, rgba(255, 255, 255, 0) 100%);
+  pointer-events: none;
+  border-top-left-radius: inherit;
+  border-top-right-radius: inherit;
+}
+
+/* Technical Label Caps (JetBrains Mono 11px uppercase) */
+.label-caps {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+/* Emerald Action Glow */
+.glow-emerald {
+  box-shadow: 0 0 16px rgba(16, 185, 129, 0.22);
+}
+
+.glow-emerald-lg {
+  box-shadow: 0 0 28px rgba(16, 185, 129, 0.35);
+}
+
+/* Precision Scrollbar */
 ::-webkit-scrollbar {
-  width: 6px;
-  height: 6px;
+  width: 5px;
+  height: 5px;
 }
 
 ::-webkit-scrollbar-track {
-  background: transparent;
+  background: #000000;
 }
 
 ::-webkit-scrollbar-thumb {
-  background: #3f3f46;
-  border-radius: 3px;
+  background: #27272a;
+  border-radius: 2px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: #52525b;
+  background: #3f3f46;
 }
 
 /* ─── Animated Accordion ─── */
-
-/* The accordion uses a grid-row trick: 
-   closed = grid-template-rows: 0fr → open = 1fr
-   This allows height:auto animation via CSS transitions. */
-
 .accordion-content {
   display: grid;
   grid-template-rows: 0fr;
@@ -82,7 +126,6 @@ body {
   visibility: visible;
 }
 
-/* Chevron rotation */
 .accordion-chevron {
   transition: transform 250ms ease-out;
 }
@@ -91,12 +134,11 @@ body {
   transform: rotate(180deg);
 }
 
-/* ─── Subtle Micro-Animations ─── */
-
+/* ─── Micro-Animations ─── */
 @keyframes fade-in-up {
   from {
     opacity: 0;
-    transform: translateY(8px);
+    transform: translateY(6px);
   }
   to {
     opacity: 1;
@@ -104,42 +146,15 @@ body {
   }
 }
 
-@keyframes fade-in {
-  from { opacity: 0; }
-  to { opacity: 1; }
-}
-
 .animate-fade-in-up {
-  animation: fade-in-up 400ms ease-out both;
+  animation: fade-in-up 350ms ease-out both;
 }
 
-.animate-fade-in {
-  animation: fade-in 300ms ease-out both;
+@keyframes pulse-subtle {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.4; }
 }
 
-/* Staggered children animation */
-.stagger-children > * {
-  animation: fade-in-up 400ms ease-out both;
+.animate-pulse-subtle {
+  animation: pulse-subtle 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
 }
-
-.stagger-children > *:nth-child(1) { animation-delay: 0ms; }
-.stagger-children > *:nth-child(2) { animation-delay: 60ms; }
-.stagger-children > *:nth-child(3) { animation-delay: 120ms; }
-.stagger-children > *:nth-child(4) { animation-delay: 180ms; }
-.stagger-children > *:nth-child(5) { animation-delay: 240ms; }
-.stagger-children > *:nth-child(6) { animation-delay: 300ms; }
-
-/* CTA glow effect */
-@keyframes cta-glow {
-  0%, 100% {
-    box-shadow: 0 0 8px rgba(16, 229, 153, 0.15), 0 0 24px rgba(16, 229, 153, 0.05);
-  }
-  50% {
-    box-shadow: 0 0 16px rgba(16, 229, 153, 0.3), 0 0 40px rgba(16, 229, 153, 0.1);
-  }
-}
-
-.cta-glow {
-  animation: cta-glow 3s ease-in-out infinite;
-}
-

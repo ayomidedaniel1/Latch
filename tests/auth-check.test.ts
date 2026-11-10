@@ -1,203 +1,196 @@
 import test from 'node:test';
 import assert from 'node:assert';
+import {
+  mockDbState,
+  setMockSession,
+  resetAllMocks,
+} from './mock-helper';
+import { authorizeProjectAccess, requireSession } from '@/lib/services/auth-check';
 
-/**
- * Mock-based unit tests for the unified authorizeProjectAccess logic.
- * Tests both auth paths: NextAuth session and CLI token (Bearer + query param).
- */
+const PROJECT_ID = '3a6b8c12-e5f6-49a0-8b1c-2d3e4f5a6b7c';
+const OTHER_PROJECT_ID = '8f1e2d3c-4b5a-4678-9012-3456789abcde';
+const USER_ID = 'user-owner-456';
+const OTHER_USER_ID = 'user-intruder-789';
+const CLI_TOKEN = 'cli-token-secret-xyz';
 
-// ─── Mock Setup ──────────────────────────────────────────────────────
+test.beforeEach(() => {
+  resetAllMocks();
+});
 
-interface AuthResult {
-  authorized: boolean;
-  isCliRequest: boolean;
-  userId: string | null;
-}
+// ─── Session-Based Authentication ────────────────────────────────────
 
-interface MockProject {
-  id: string;
-  user_id: string;
-  cli_token: string;
-}
+test('auth-check: valid session with project ownership returns authorized=true, isCliRequest=false', async () => {
+  setMockSession({ user: { id: USER_ID } });
 
-function createMockAuth(options: {
-  sessionUserId: string | null;
-  projects: MockProject[];
-}) {
-  async function authorizeProjectAccess(
-    req: { url: string; headers: { get: (name: string) => string | null } },
-    projectId: string,
-  ): Promise<AuthResult> {
-    // NextAuth session path
-    if (options.sessionUserId) {
-      const project = options.projects.find(
-        p => p.id === projectId && p.user_id === options.sessionUserId
-      );
-      if (project) {
-        return { authorized: true, isCliRequest: false, userId: options.sessionUserId };
+  mockDbState.queryHandler = (text, values) => {
+    if (text.includes('FROM projects')) {
+      // verifyOwnership query matches project_id and user_id
+      if (values[0] === PROJECT_ID && values[1] === USER_ID) {
+        return [{ id: PROJECT_ID, user_id: USER_ID }];
       }
     }
-
-    // CLI token path (Bearer header or query param)
-    const url = new URL(req.url);
-    const authHeader = req.headers.get('authorization');
-    let token = authHeader?.startsWith('Bearer ') ? authHeader.substring(7).trim() : null;
-
-    if (!token) {
-      token = url.searchParams.get('token');
-    }
-
-    if (token) {
-      const project = options.projects.find(
-        p => p.id === projectId && p.cli_token === token
-      );
-      if (project) {
-        return { authorized: true, isCliRequest: true, userId: project.user_id };
-      }
-    }
-
-    return { authorized: false, isCliRequest: false, userId: null };
-  }
-
-  return { authorizeProjectAccess };
-}
-
-function mockRequest(url: string, headers: Record<string, string> = {}): {
-  url: string;
-  headers: { get: (name: string) => string | null };
-} {
-  return {
-    url,
-    headers: {
-      get: (name: string) => headers[name.toLowerCase()] ?? null,
-    },
+    return [];
   };
-}
 
-const testProject: MockProject = {
-  id: 'proj-123',
-  user_id: 'user-456',
-  cli_token: 'cli-token-abc',
-};
-
-// ─── Session Auth Tests ──────────────────────────────────────────────
-
-test('auth: valid session with project ownership returns authorized=true, isCliRequest=false', async () => {
-  const auth = createMockAuth({
-    sessionUserId: 'user-456',
-    projects: [testProject],
-  });
-
-  const req = mockRequest('http://localhost:3000/api/events/stream?projectId=proj-123');
-  const result = await auth.authorizeProjectAccess(req, 'proj-123');
+  const req = new Request(`http://localhost:3000/api/events/stream?projectId=${PROJECT_ID}`);
+  const result = await authorizeProjectAccess(req, PROJECT_ID);
 
   assert.strictEqual(result.authorized, true);
   assert.strictEqual(result.isCliRequest, false);
-  assert.strictEqual(result.userId, 'user-456');
+  assert.strictEqual(result.userId, USER_ID);
 });
 
-test('auth: valid session but wrong project returns authorized=false', async () => {
-  const auth = createMockAuth({
-    sessionUserId: 'user-456',
-    projects: [testProject],
-  });
+test('auth-check: valid session but wrong project returns authorized=false', async () => {
+  setMockSession({ user: { id: USER_ID } });
 
-  const req = mockRequest('http://localhost:3000/api/events/stream?projectId=other-project');
-  const result = await auth.authorizeProjectAccess(req, 'other-project');
+  mockDbState.queryHandler = (text, values) => {
+    if (text.includes('FROM projects')) {
+      // User only owns PROJECT_ID, not OTHER_PROJECT_ID
+      if (values[0] === PROJECT_ID && values[1] === USER_ID) {
+        return [{ id: PROJECT_ID, user_id: USER_ID }];
+      }
+    }
+    return [];
+  };
 
-  assert.strictEqual(result.authorized, false);
-});
-
-// ─── CLI Token Auth Tests ────────────────────────────────────────────
-
-test('auth: no session, valid Bearer token returns authorized=true, isCliRequest=true', async () => {
-  const auth = createMockAuth({
-    sessionUserId: null,
-    projects: [testProject],
-  });
-
-  const req = mockRequest('http://localhost:3000/api/tunnel/connect?projectId=proj-123', {
-    'authorization': 'Bearer cli-token-abc',
-  });
-  const result = await auth.authorizeProjectAccess(req, 'proj-123');
-
-  assert.strictEqual(result.authorized, true);
-  assert.strictEqual(result.isCliRequest, true);
-  assert.strictEqual(result.userId, 'user-456');
-});
-
-test('auth: no session, valid query param token returns authorized=true, isCliRequest=true', async () => {
-  const auth = createMockAuth({
-    sessionUserId: null,
-    projects: [testProject],
-  });
-
-  const req = mockRequest('http://localhost:3000/api/events/detail?eventId=evt-1&token=cli-token-abc');
-  const result = await auth.authorizeProjectAccess(req, 'proj-123');
-
-  assert.strictEqual(result.authorized, true);
-  assert.strictEqual(result.isCliRequest, true);
-});
-
-test('auth: no session, invalid token returns authorized=false', async () => {
-  const auth = createMockAuth({
-    sessionUserId: null,
-    projects: [testProject],
-  });
-
-  const req = mockRequest('http://localhost:3000/api/events/stream?projectId=proj-123', {
-    'authorization': 'Bearer wrong-token',
-  });
-  const result = await auth.authorizeProjectAccess(req, 'proj-123');
-
-  assert.strictEqual(result.authorized, false);
-});
-
-test('auth: no session, no token returns authorized=false', async () => {
-  const auth = createMockAuth({
-    sessionUserId: null,
-    projects: [testProject],
-  });
-
-  const req = mockRequest('http://localhost:3000/api/events/stream?projectId=proj-123');
-  const result = await auth.authorizeProjectAccess(req, 'proj-123');
+  const req = new Request(`http://localhost:3000/api/events/stream?projectId=${OTHER_PROJECT_ID}`);
+  const result = await authorizeProjectAccess(req, OTHER_PROJECT_ID);
 
   assert.strictEqual(result.authorized, false);
   assert.strictEqual(result.isCliRequest, false);
   assert.strictEqual(result.userId, null);
 });
 
-// ─── Edge Cases ──────────────────────────────────────────────────────
+test('auth-check: requireSession returns userId when session exists', async () => {
+  setMockSession({ user: { id: USER_ID } });
 
-test('auth: session user does not own the project, valid CLI token works', async () => {
-  const auth = createMockAuth({
-    sessionUserId: 'different-user',
-    projects: [testProject],
-  });
-
-  const req = mockRequest('http://localhost:3000/api/tunnel/connect?projectId=proj-123', {
-    'authorization': 'Bearer cli-token-abc',
-  });
-  const result = await auth.authorizeProjectAccess(req, 'proj-123');
-
-  // Session fails (different user), but CLI token succeeds
-  assert.strictEqual(result.authorized, true);
-  assert.strictEqual(result.isCliRequest, true);
-  assert.strictEqual(result.userId, 'user-456');
+  const session = await requireSession();
+  assert.ok(session !== null);
+  assert.strictEqual(session?.userId, USER_ID);
 });
 
-test('auth: Bearer prefix must be exact (case sensitive)', async () => {
-  const auth = createMockAuth({
-    sessionUserId: null,
-    projects: [testProject],
-  });
+test('auth-check: requireSession returns null when unauthenticated', async () => {
+  setMockSession(null);
 
-  // "bearer" lowercase — our code checks startsWith('Bearer ')
-  const req = mockRequest('http://localhost:3000/api/tunnel/connect?projectId=proj-123', {
-    'authorization': 'bearer cli-token-abc',
-  });
-  const result = await auth.authorizeProjectAccess(req, 'proj-123');
+  const session = await requireSession();
+  assert.strictEqual(session, null);
+});
 
-  // Should fail because 'bearer' !== 'Bearer'
+// ─── CLI-Token-Based Authentication ──────────────────────────────────
+
+test('auth-check: no session, valid Bearer token in Authorization header returns authorized=true, isCliRequest=true', async () => {
+  setMockSession(null);
+
+  mockDbState.queryHandler = (text, values) => {
+    if (text.includes('cli_token')) {
+      if (values[0] === PROJECT_ID && values[1] === CLI_TOKEN) {
+        return [{ id: PROJECT_ID, user_id: USER_ID, cli_token: CLI_TOKEN }];
+      }
+    }
+    return [];
+  };
+
+  const req = new Request(`http://localhost:3000/api/tunnel/connect?projectId=${PROJECT_ID}`, {
+    headers: {
+      'authorization': `Bearer ${CLI_TOKEN}`,
+    },
+  });
+  const result = await authorizeProjectAccess(req, PROJECT_ID);
+
+  assert.strictEqual(result.authorized, true);
+  assert.strictEqual(result.isCliRequest, true);
+  assert.strictEqual(result.userId, USER_ID);
+});
+
+test('auth-check: no session, valid query param token returns authorized=true, isCliRequest=true', async () => {
+  setMockSession(null);
+
+  mockDbState.queryHandler = (text, values) => {
+    if (text.includes('cli_token')) {
+      if (values[0] === PROJECT_ID && values[1] === CLI_TOKEN) {
+        return [{ id: PROJECT_ID, user_id: USER_ID, cli_token: CLI_TOKEN }];
+      }
+    }
+    return [];
+  };
+
+  const req = new Request(`http://localhost:3000/api/events/detail?eventId=some-event&token=${CLI_TOKEN}`);
+  const result = await authorizeProjectAccess(req, PROJECT_ID);
+
+  assert.strictEqual(result.authorized, true);
+  assert.strictEqual(result.isCliRequest, true);
+  assert.strictEqual(result.userId, USER_ID);
+});
+
+test('auth-check: no session, invalid CLI token returns authorized=false', async () => {
+  setMockSession(null);
+
+  mockDbState.queryHandler = () => [];
+
+  const req = new Request(`http://localhost:3000/api/tunnel/connect?projectId=${PROJECT_ID}`, {
+    headers: {
+      'authorization': 'Bearer invalid-token-value',
+    },
+  });
+  const result = await authorizeProjectAccess(req, PROJECT_ID);
+
+  assert.strictEqual(result.authorized, false);
+  assert.strictEqual(result.isCliRequest, false);
+  assert.strictEqual(result.userId, null);
+});
+
+test('auth-check: no session, no token returns authorized=false', async () => {
+  setMockSession(null);
+
+  const req = new Request(`http://localhost:3000/api/events/stream?projectId=${PROJECT_ID}`);
+  const result = await authorizeProjectAccess(req, PROJECT_ID);
+
+  assert.strictEqual(result.authorized, false);
+  assert.strictEqual(result.isCliRequest, false);
+  assert.strictEqual(result.userId, null);
+});
+
+// ─── Dual-Auth Fallback & Edge Cases ─────────────────────────────────
+
+test('auth-check: session user does not own project, but valid CLI token works', async () => {
+  setMockSession({ user: { id: OTHER_USER_ID } });
+
+  mockDbState.queryHandler = (text, values) => {
+    // Session check fails because OTHER_USER_ID does not own PROJECT_ID
+    if (text.includes('FROM projects') && !text.includes('cli_token')) {
+      return [];
+    }
+    // CLI token check succeeds
+    if (text.includes('cli_token')) {
+      if (values[0] === PROJECT_ID && values[1] === CLI_TOKEN) {
+        return [{ id: PROJECT_ID, user_id: USER_ID, cli_token: CLI_TOKEN }];
+      }
+    }
+    return [];
+  };
+
+  const req = new Request(`http://localhost:3000/api/tunnel/connect?projectId=${PROJECT_ID}`, {
+    headers: {
+      'authorization': `Bearer ${CLI_TOKEN}`,
+    },
+  });
+  const result = await authorizeProjectAccess(req, PROJECT_ID);
+
+  assert.strictEqual(result.authorized, true);
+  assert.strictEqual(result.isCliRequest, true);
+  assert.strictEqual(result.userId, USER_ID);
+});
+
+test('auth-check: Bearer prefix must be exact and case-sensitive', async () => {
+  setMockSession(null);
+
+  // "bearer" in lowercase should not match startsWith('Bearer ')
+  const req = new Request(`http://localhost:3000/api/tunnel/connect?projectId=${PROJECT_ID}`, {
+    headers: {
+      'authorization': `bearer ${CLI_TOKEN}`,
+    },
+  });
+  const result = await authorizeProjectAccess(req, PROJECT_ID);
+
   assert.strictEqual(result.authorized, false);
 });

@@ -1,236 +1,436 @@
 import test from 'node:test';
 import assert from 'node:assert';
+import {
+  mockDbState,
+  mockFetchState,
+  setupMockFetch,
+  restoreFetch,
+  setMockSession,
+  resetAllMocks,
+} from './mock-helper';
+import * as replayRoute from '@/app/api/replay/route';
+import { replayEvent, ReplayError } from '@/lib/services/replay';
+import { env } from '@/lib/env';
 
-/**
- * Mock-based unit tests for the replay service logic.
- * Tests header reconstruction, error handling, and replay record storage
- * without requiring a real database or network.
- */
+const USER_ID = 'user-owner-123';
+const OTHER_USER_ID = 'user-intruder-999';
+const PROJECT_ID = 'a1b2c3d4-e5f6-4a8b-9c0d-1e2f3a4b5c6d';
+const EVENT_ID = 'd3b07384-d113-4956-a5db-e1c725a34e32';
+const DESTINATION_URL = 'https://webhook.site/test-receiver';
 
-// ─── Mock Setup ──────────────────────────────────────────────────────
+test.before(() => {
+  setupMockFetch();
+});
 
-interface MockEvent {
-  id: string;
-  project_id: string;
-  method: string;
-  headers: Record<string, string>;
-  raw_body: string;
-}
+test.after(() => {
+  restoreFetch();
+});
 
-interface MockReplayInsert {
-  eventId: string;
-  destinationUrl: string;
-  responseStatus: number;
-  responseBody: string;
-  durationMs: number;
-}
+test.beforeEach(() => {
+  resetAllMocks();
+  setMockSession({ user: { id: USER_ID } });
+});
 
-function createMockReplayEngine(options: {
-  event: MockEvent | null;
-  projectOwned: boolean;
-  fetchResponse?: { status: number; statusText: string; body: string };
-  fetchThrows?: string;
-}) {
-  let replayInserted: MockReplayInsert | null = null;
+// ─── 1. Authentication & Route Input Validation ──────────────────────
 
-  async function replayEvent(
-    eventId: string,
-    destinationUrl: string,
-    userId: string,
-  ): Promise<{ status: number; body: string; duration: number }> {
-    // Fetch the original event
-    const event = options.event;
-    if (!event || event.id !== eventId) {
-      throw new ReplayError('Event not found', 404);
+test('replay route: returns 401 Unauthorized when session is missing', async () => {
+  setMockSession(null);
+
+  const req = new Request('http://localhost:3000/api/replay', {
+    method: 'POST',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify({
+      eventId: EVENT_ID,
+      destinationUrl: DESTINATION_URL,
+    }),
+  });
+
+  const response = await replayRoute.POST(req);
+  assert.strictEqual(response.status, 401);
+  assert.strictEqual(await response.text(), 'Unauthorized');
+});
+
+test('replay route: returns 400 for invalid JSON body', async () => {
+  const req = new Request('http://localhost:3000/api/replay', {
+    method: 'POST',
+    headers: { 'content-type': 'application/json' },
+    body: 'invalid-json-{missing-bracket',
+  });
+
+  const response = await replayRoute.POST(req);
+  assert.strictEqual(response.status, 400);
+  const data = (await response.json()) as { error: string };
+  assert.strictEqual(data.error, 'Invalid JSON body');
+});
+
+test('replay route: returns 400 when eventId is not a valid UUID', async () => {
+  const req = new Request('http://localhost:3000/api/replay', {
+    method: 'POST',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify({
+      eventId: 'not-a-uuid',
+      destinationUrl: DESTINATION_URL,
+    }),
+  });
+
+  const response = await replayRoute.POST(req);
+  assert.strictEqual(response.status, 400);
+  const data = (await response.json()) as { error: string; details: { eventId?: string[] } };
+  assert.strictEqual(data.error, 'Validation failed');
+  assert.ok(data.details.eventId, 'Should return validation error on eventId');
+});
+
+test('replay route: returns 400 when destinationUrl is malformed', async () => {
+  const req = new Request('http://localhost:3000/api/replay', {
+    method: 'POST',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify({
+      eventId: EVENT_ID,
+      destinationUrl: 'not-a-valid-url',
+    }),
+  });
+
+  const response = await replayRoute.POST(req);
+  assert.strictEqual(response.status, 400);
+  const data = (await response.json()) as { error: string; details: { destinationUrl?: string[] } };
+  assert.strictEqual(data.error, 'Validation failed');
+  assert.ok(data.details.destinationUrl);
+});
+
+// ─── 2. Ownership Verification & Event Existence ─────────────────────
+
+test('replay route: returns 404 when event is not found', async () => {
+  // DB returns empty array for event query
+  mockDbState.queryHandler = (text) => {
+    if (text.includes('FROM events')) {
+      return [];
     }
-
-    // Verify ownership
-    if (!options.projectOwned) {
-      throw new ReplayError('Unauthorized: Project not owned by user', 403);
-    }
-
-    // Build replay headers
-    const replayHeaders: Record<string, string> = { ...event.headers };
-    delete replayHeaders['host'];
-    delete replayHeaders['content-length'];
-    replayHeaders['x-webhook-replay'] = 'true';
-    replayHeaders['x-webhook-original-id'] = eventId;
-
-    const start = Date.now();
-    let responseStatus: number;
-    let responseBody: string;
-
-    if (options.fetchThrows) {
-      responseStatus = 500;
-      responseBody = options.fetchThrows;
-    } else if (options.fetchResponse) {
-      responseStatus = options.fetchResponse.status;
-      responseBody = options.fetchResponse.body;
-    } else {
-      responseStatus = 200;
-      responseBody = 'OK';
-    }
-
-    const duration = Date.now() - start;
-
-    replayInserted = {
-      eventId,
-      destinationUrl,
-      responseStatus,
-      responseBody: responseBody.slice(0, 10000),
-      durationMs: duration,
-    };
-
-    return { status: responseStatus, body: responseBody, duration };
-  }
-
-  return {
-    replayEvent,
-    getReplayInsert: () => replayInserted,
+    return [];
   };
-}
 
-class ReplayError extends Error {
-  constructor(message: string, public statusCode: number) {
-    super(message);
-    this.name = 'ReplayError';
-  }
-}
-
-// ─── Tests ──────────────────────────────────────────────────────────
-
-test('replay: successful replay returns status, body, and duration', async () => {
-  const engine = createMockReplayEngine({
-    event: {
-      id: 'evt-1', project_id: 'proj-1', method: 'POST',
-      headers: { 'content-type': 'application/json', 'host': 'hooks.stripe.com' },
-      raw_body: '{"test": true}',
-    },
-    projectOwned: true,
-    fetchResponse: { status: 200, statusText: 'OK', body: '{"received": true}' },
+  const req = new Request('http://localhost:3000/api/replay', {
+    method: 'POST',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify({
+      eventId: EVENT_ID,
+      destinationUrl: DESTINATION_URL,
+    }),
   });
 
-  const result = await engine.replayEvent('evt-1', 'https://api.example.com/hook', 'user-1');
+  const response = await replayRoute.POST(req);
+  assert.strictEqual(response.status, 404);
+  const data = (await response.json()) as { error: string };
+  assert.strictEqual(data.error, 'Event not found');
+});
+
+test('replay route: returns 403 when user does not own the project', async () => {
+  // DB returns the event, but returns empty for verifyOwnership (not owned by user)
+  mockDbState.queryHandler = (text) => {
+    if (text.includes('FROM events')) {
+      return [{
+        id: EVENT_ID,
+        project_id: PROJECT_ID,
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        raw_body: '{"event":"charge.succeeded"}',
+      }];
+    }
+    if (text.includes('FROM projects')) {
+      // User does not own the project
+      return [];
+    }
+    return [];
+  };
+
+  const req = new Request('http://localhost:3000/api/replay', {
+    method: 'POST',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify({
+      eventId: EVENT_ID,
+      destinationUrl: DESTINATION_URL,
+    }),
+  });
+
+  const response = await replayRoute.POST(req);
+  assert.strictEqual(response.status, 403);
+  const data = (await response.json()) as { error: string };
+  assert.strictEqual(data.error, 'Unauthorized: Project not owned by user');
+});
+
+// ─── 3. Header Forwarding & Header Stripping / Injection ──────────────
+
+test('replay: forwards headers with host and content-length stripped, and injects x-webhook-replay headers', async () => {
+  const originalHeaders = {
+    'content-type': 'application/json',
+    'host': 'api.stripe.com',
+    'content-length': '999',
+    'stripe-signature': 't=123456,v1=abc123def456',
+    'user-agent': 'Stripe/1.0',
+    'x-custom-tracking': 'track-42',
+  };
+
+  mockDbState.queryHandler = (text, values) => {
+    if (text.includes('FROM events')) {
+      return [{
+        id: EVENT_ID,
+        project_id: PROJECT_ID,
+        method: 'POST',
+        headers: originalHeaders,
+        raw_body: '{"test":"payload"}',
+      }];
+    }
+    if (text.includes('FROM projects')) {
+      return [{ id: PROJECT_ID, user_id: USER_ID }];
+    }
+    if (text.includes('INSERT INTO replays')) {
+      return [{ id: 'rep-1', event_id: values[0] }];
+    }
+    return [];
+  };
+
+  mockFetchState.defaultResponse = {
+    status: 200,
+    body: '{"received":true}',
+  };
+
+  const result = await replayEvent(EVENT_ID, DESTINATION_URL, USER_ID);
   assert.strictEqual(result.status, 200);
-  assert.strictEqual(result.body, '{"received": true}');
-  assert.ok(result.duration >= 0);
-  assert.ok(engine.getReplayInsert() !== null, 'Should store replay record');
+
+  // Inspect outgoing fetch call
+  assert.strictEqual(mockFetchState.calls.length, 1);
+  const call = mockFetchState.calls[0];
+  assert.strictEqual(call.url, DESTINATION_URL);
+  assert.strictEqual(call.init?.method, 'POST');
+  assert.strictEqual(call.init?.body, '{"test":"payload"}');
+
+  const headers = call.init?.headers as Record<string, string>;
+  assert.ok(headers, 'Headers must be passed to fetch');
+
+  // Verify host and content-length are stripped
+  assert.strictEqual(headers['host'], undefined, 'host header must be stripped');
+  assert.strictEqual(headers['content-length'], undefined, 'content-length header must be stripped');
+
+  // Verify injected replay headers
+  assert.strictEqual(headers['x-webhook-replay'], 'true', 'x-webhook-replay: true must be added');
+  assert.strictEqual(headers['x-webhook-original-id'], EVENT_ID, 'x-webhook-original-id must be added');
+
+  // Verify custom provider headers are preserved
+  assert.strictEqual(headers['stripe-signature'], 't=123456,v1=abc123def456');
+  assert.strictEqual(headers['content-type'], 'application/json');
+  assert.strictEqual(headers['x-custom-tracking'], 'track-42');
 });
 
-test('replay: event not found throws ReplayError 404', async () => {
-  const engine = createMockReplayEngine({
-    event: null,
-    projectOwned: true,
-  });
+// ─── 4. Response Recording & Body Truncation at 10000 Chars ──────────
 
-  try {
-    await engine.replayEvent('nonexistent', 'https://example.com', 'user-1');
-    assert.fail('Should have thrown');
-  } catch (err) {
-    assert.ok(err instanceof ReplayError);
-    assert.strictEqual(err.statusCode, 404);
-  }
-});
+test('replay: records response in replays table with body truncated to 10000 characters', async () => {
+  // Generate a 25,000 character response body
+  const longResponseBody = 'ABCDE12345'.repeat(2500);
+  assert.strictEqual(longResponseBody.length, 25000);
 
-test('replay: project not owned throws ReplayError 403', async () => {
-  const engine = createMockReplayEngine({
-    event: { id: 'evt-1', project_id: 'proj-1', method: 'POST', headers: {}, raw_body: '{}' },
-    projectOwned: false,
-  });
+  let insertedReplayValues: unknown[] | null = null;
 
-  try {
-    await engine.replayEvent('evt-1', 'https://example.com', 'wrong-user');
-    assert.fail('Should have thrown');
-  } catch (err) {
-    assert.ok(err instanceof ReplayError);
-    assert.strictEqual(err.statusCode, 403);
-  }
-});
+  mockDbState.queryHandler = (text, values) => {
+    if (text.includes('FROM events')) {
+      return [{
+        id: EVENT_ID,
+        project_id: PROJECT_ID,
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        raw_body: '{}',
+      }];
+    }
+    if (text.includes('FROM projects')) {
+      return [{ id: PROJECT_ID, user_id: USER_ID }];
+    }
+    if (text.includes('INSERT INTO replays')) {
+      insertedReplayValues = values;
+      return [{ id: 'rep-long-body' }];
+    }
+    return [];
+  };
 
-test('replay: host and content-length headers are stripped', async () => {
-  const engine = createMockReplayEngine({
-    event: {
-      id: 'evt-1', project_id: 'proj-1', method: 'POST',
-      headers: {
-        'host': 'evil.com',
-        'content-length': '999',
-        'content-type': 'application/json',
-        'stripe-signature': 'v1=abc',
-      },
-      raw_body: '{}',
-    },
-    projectOwned: true,
-    fetchResponse: { status: 200, statusText: 'OK', body: 'OK' },
-  });
+  mockFetchState.defaultResponse = {
+    status: 200,
+    body: longResponseBody,
+  };
 
-  await engine.replayEvent('evt-1', 'https://example.com', 'user-1');
-  // The mock doesn't expose headers directly, but the ReplayError class
-  // and header stripping logic is verified through the service code.
-  // This test verifies the flow completes without error.
-  assert.ok(engine.getReplayInsert() !== null);
-});
+  const result = await replayEvent(EVENT_ID, DESTINATION_URL, USER_ID);
 
-test('replay: x-webhook-replay header is added (verified by flow completion)', async () => {
-  const engine = createMockReplayEngine({
-    event: {
-      id: 'evt-1', project_id: 'proj-1', method: 'POST',
-      headers: { 'content-type': 'text/plain' },
-      raw_body: 'hello',
-    },
-    projectOwned: true,
-    fetchResponse: { status: 200, statusText: 'OK', body: 'OK' },
-  });
-
-  const result = await engine.replayEvent('evt-1', 'https://example.com', 'user-1');
+  // The client gets the immediate response body
   assert.strictEqual(result.status, 200);
+  assert.strictEqual(result.body, longResponseBody);
+
+  // The database record must truncate the response body to 10000 characters
+  assert.ok(insertedReplayValues !== null, 'Replay record must be inserted');
+  const values = insertedReplayValues as unknown[];
+
+  // SQL params: [eventId, destinationUrl, responseStatus, responseBody.slice(0, 10000), durationMs]
+  assert.strictEqual(values[0], EVENT_ID);
+  assert.strictEqual(values[1], DESTINATION_URL);
+  assert.strictEqual(values[2], 200);
+
+  const storedBody = values[3] as string;
+  assert.strictEqual(typeof storedBody, 'string');
+  assert.strictEqual(storedBody.length, 10000, 'Stored response body must be truncated to 10000 characters');
+  assert.strictEqual(storedBody, longResponseBody.slice(0, 10000));
 });
 
-test('replay: destination error stores status 500 with error message', async () => {
-  const engine = createMockReplayEngine({
-    event: {
-      id: 'evt-1', project_id: 'proj-1', method: 'POST',
-      headers: {}, raw_body: '{}',
-    },
-    projectOwned: true,
-    fetchThrows: 'ECONNREFUSED: Connection refused',
-  });
+// ─── 5. Destination Error Handling (Network & 5xx) ───────────────────
 
-  const result = await engine.replayEvent('evt-1', 'http://localhost:9999/dead', 'user-1');
+test('replay: records status 500 when destination throws network error (e.g. ECONNREFUSED)', async () => {
+  mockDbState.queryHandler = (text, values) => {
+    if (text.includes('FROM events')) {
+      return [{
+        id: EVENT_ID,
+        project_id: PROJECT_ID,
+        method: 'POST',
+        headers: {},
+        raw_body: '{}',
+      }];
+    }
+    if (text.includes('FROM projects')) {
+      return [{ id: PROJECT_ID, user_id: USER_ID }];
+    }
+    if (text.includes('INSERT INTO replays')) {
+      return [{ id: 'rep-econn', response_status: values[2] }];
+    }
+    return [];
+  };
+
+  mockFetchState.customHandler = async () => {
+    throw new Error('fetch failed: connect ECONNREFUSED 127.0.0.1:9999');
+  };
+
+  const result = await replayEvent(EVENT_ID, 'http://127.0.0.1:9999/dead-end', USER_ID);
   assert.strictEqual(result.status, 500);
   assert.ok(result.body.includes('ECONNREFUSED'));
-  assert.ok(engine.getReplayInsert() !== null);
-  assert.strictEqual(engine.getReplayInsert()!.responseStatus, 500);
+
+  // Verify inserted replay record has status 500
+  const insertQuery = mockDbState.queries.find(q => q.text.includes('INSERT INTO replays'));
+  assert.ok(insertQuery);
+  assert.strictEqual(insertQuery.values[2], 500);
 });
 
-test('replay: destination returns 500 error status', async () => {
-  const engine = createMockReplayEngine({
-    event: {
-      id: 'evt-1', project_id: 'proj-1', method: 'POST',
-      headers: {}, raw_body: '{}',
-    },
-    projectOwned: true,
-    fetchResponse: { status: 500, statusText: 'Internal Server Error', body: 'Server crashed' },
-  });
+test('replay: records status 500 when destination returns HTTP 500', async () => {
+  mockDbState.queryHandler = (text, values) => {
+    if (text.includes('FROM events')) {
+      return [{
+        id: EVENT_ID,
+        project_id: PROJECT_ID,
+        method: 'POST',
+        headers: {},
+        raw_body: '{}',
+      }];
+    }
+    if (text.includes('FROM projects')) {
+      return [{ id: PROJECT_ID, user_id: USER_ID }];
+    }
+    if (text.includes('INSERT INTO replays')) {
+      return [{ id: 'rep-500' }];
+    }
+    return [];
+  };
 
-  const result = await engine.replayEvent('evt-1', 'https://example.com/hook', 'user-1');
+  mockFetchState.defaultResponse = {
+    status: 500,
+    body: 'Internal Server Error: DB down',
+  };
+
+  const result = await replayEvent(EVENT_ID, DESTINATION_URL, USER_ID);
   assert.strictEqual(result.status, 500);
-  assert.strictEqual(result.body, 'Server crashed');
-  assert.strictEqual(engine.getReplayInsert()!.responseStatus, 500);
+  assert.strictEqual(result.body, 'Internal Server Error: DB down');
+
+  const insertQuery = mockDbState.queries.find(q => q.text.includes('INSERT INTO replays'));
+  assert.ok(insertQuery);
+  assert.strictEqual(insertQuery.values[2], 500);
+  assert.strictEqual(insertQuery.values[3], 'Internal Server Error: DB down');
 });
 
-test('replay: response body is truncated to 10KB in stored record', async () => {
-  const longBody = 'x'.repeat(20000);
-  const engine = createMockReplayEngine({
-    event: {
-      id: 'evt-1', project_id: 'proj-1', method: 'POST',
-      headers: {}, raw_body: '{}',
-    },
-    projectOwned: true,
-    fetchResponse: { status: 200, statusText: 'OK', body: longBody },
-  });
+// ─── 6. SSRF Guard (Localhost & Internal IP Rejection) ────────────────
 
-  await engine.replayEvent('evt-1', 'https://example.com', 'user-1');
-  const insert = engine.getReplayInsert();
-  assert.ok(insert !== null);
-  assert.ok(insert.responseBody.length <= 10000, `Expected <= 10000, got ${insert.responseBody.length}`);
+test('replay route: rejects destination URLs pointing to localhost or internal IPs when in cloud mode (SSRF guard)', async () => {
+  const originalIsLocalMode = env.isLocalMode;
+  try {
+    (env as { isLocalMode: boolean }).isLocalMode = false;
+
+    const blockedUrls = [
+      'http://localhost/webhook',
+      'http://localhost:8080/hook',
+      'http://127.0.0.1:3000/webhook',
+      'http://0.0.0.0:5000/webhook',
+      'http://169.254.169.254/latest/meta-data',
+      'http://metadata.google.internal/computeMetadata/v1',
+      'http://service.internal/webhook',
+    ];
+
+    for (const url of blockedUrls) {
+      const req = new Request('http://localhost:3000/api/replay', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({
+          eventId: EVENT_ID,
+          destinationUrl: url,
+        }),
+      });
+
+      const response = await replayRoute.POST(req);
+      assert.strictEqual(response.status, 400, `Expected 400 Bad Request for blocked SSRF URL: ${url}`);
+      const data = (await response.json()) as { error: string; details: { destinationUrl?: string[] } };
+      assert.strictEqual(data.error, 'Validation failed');
+      assert.ok(
+        data.details.destinationUrl?.includes('Destination URL must not target internal/private addresses'),
+        `Expected SSRF rejection error message for ${url}`
+      );
+    }
+  } finally {
+    (env as { isLocalMode: boolean }).isLocalMode = originalIsLocalMode;
+  }
+});
+
+test('replay route: allows localhost destination URL when running in local mode', async () => {
+  const originalIsLocalMode = env.isLocalMode;
+  try {
+    (env as { isLocalMode: boolean }).isLocalMode = true;
+
+    mockDbState.queryHandler = (text) => {
+      if (text.includes('FROM events')) {
+        return [{
+          id: EVENT_ID,
+          project_id: PROJECT_ID,
+          method: 'POST',
+          headers: { 'content-type': 'application/json' },
+          raw_body: '{}',
+        }];
+      }
+      if (text.includes('FROM projects')) {
+        return [{ id: PROJECT_ID, user_id: USER_ID }];
+      }
+      if (text.includes('INSERT INTO replays')) {
+        return [{ id: 'rep-local-allow' }];
+      }
+      return [];
+    };
+
+    mockFetchState.defaultResponse = {
+      status: 200,
+      body: '{"status":"ok"}',
+    };
+
+    const req = new Request('http://localhost:3000/api/replay', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({
+        eventId: EVENT_ID,
+        destinationUrl: 'http://localhost:3000/api/webhook-sink',
+      }),
+    });
+
+    const response = await replayRoute.POST(req);
+    assert.strictEqual(response.status, 200);
+    const data = (await response.json()) as { status: number; body: string };
+    assert.strictEqual(data.status, 200);
+    assert.strictEqual(data.body, '{"status":"ok"}');
+  } finally {
+    (env as { isLocalMode: boolean }).isLocalMode = originalIsLocalMode;
+  }
 });

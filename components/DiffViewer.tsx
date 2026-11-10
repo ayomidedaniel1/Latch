@@ -26,21 +26,21 @@ export function DiffViewer({ eventA, eventB }: DiffViewerProps) {
   }, [entries]);
 
   return (
-    <div className="rounded-lg border border-zinc-800 bg-zinc-900/50 text-sm space-y-0 overflow-hidden">
+    <div className="glass-panel rounded-lg border border-[#27272a] bg-[#131315] text-sm overflow-hidden shadow-2xl">
       {/* Header */}
-      <div className="flex items-center justify-between border-b border-zinc-800 px-4 py-3">
-        <div className="flex items-center gap-4 text-xs">
+      <div className="flex items-center justify-between border-b border-[#27272a] px-4 py-2.5 bg-[#0e0e10]">
+        <div className="flex items-center gap-3 text-xs">
           <EventBadge label="A" color="blue" event={eventA} />
-          <span className="text-zinc-600">vs</span>
+          <span className="text-[#71717a] font-mono text-[10px]">vs</span>
           <EventBadge label="B" color="purple" event={eventB} />
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-1.5">
           <button
             onClick={() => setDiffTarget('body')}
             className={`text-[10px] font-mono px-2 py-0.5 rounded transition-colors cursor-pointer ${
               diffTarget === 'body'
-                ? 'bg-zinc-800 text-zinc-200'
-                : 'text-zinc-500 hover:text-zinc-300'
+                ? 'bg-[#10b981]/15 text-[#10b981] border border-[#10b981]/30 font-semibold'
+                : 'text-[#71717a] hover:text-[#e5e1e4]'
             }`}
           >
             Payload
@@ -49,8 +49,8 @@ export function DiffViewer({ eventA, eventB }: DiffViewerProps) {
             onClick={() => setDiffTarget('headers')}
             className={`text-[10px] font-mono px-2 py-0.5 rounded transition-colors cursor-pointer ${
               diffTarget === 'headers'
-                ? 'bg-zinc-800 text-zinc-200'
-                : 'text-zinc-500 hover:text-zinc-300'
+                ? 'bg-[#10b981]/15 text-[#10b981] border border-[#10b981]/30 font-semibold'
+                : 'text-[#71717a] hover:text-[#e5e1e4]'
             }`}
           >
             Headers
@@ -64,13 +64,13 @@ export function DiffViewer({ eventA, eventB }: DiffViewerProps) {
       {/* Diff Body */}
       <div className="max-h-[500px] overflow-y-auto">
         {entries.length === 0 ? (
-          <div className="px-4 py-8 text-center text-zinc-500 text-xs">
+          <div className="px-4 py-8 text-center text-[#71717a] text-xs font-mono">
             {dataA == null && dataB == null
               ? 'Both payloads are empty.'
               : 'No differences found. Payloads are identical.'}
           </div>
         ) : (
-          <div className="font-mono text-[12px] leading-[1.8]">
+          <div className="font-mono text-[12px] leading-[1.8] py-1">
             {entries.map((entry, i) => (
               <DiffLine key={`${entry.path}-${i}`} entry={entry} />
             ))}
@@ -94,17 +94,17 @@ function EventBadge({
 }) {
   const colorClasses =
     color === 'blue'
-      ? 'bg-blue-500/10 text-blue-400 border-blue-500/20'
-      : 'bg-purple-500/10 text-purple-400 border-purple-500/20';
+      ? 'bg-blue-500/10 text-blue-400 border-blue-500/30'
+      : 'bg-purple-500/10 text-purple-400 border-purple-500/30';
 
   return (
     <div className="flex items-center gap-2">
       <span
-        className={`text-[10px] font-bold px-1.5 py-0.5 rounded border ${colorClasses}`}
+        className={`text-[10px] font-bold px-1.5 py-0.5 rounded border font-mono ${colorClasses}`}
       >
         {label}
       </span>
-      <span className="text-zinc-400 font-mono text-[10px]">
+      <span className="text-[#9ca3af] font-mono text-[11px]">
         {new Date(event.received_at).toLocaleTimeString()}
       </span>
     </div>
@@ -119,17 +119,17 @@ function DiffSummary({
   counts: Record<DiffEntryType, number>;
 }) {
   return (
-    <div className="flex items-center gap-3 px-4 py-2 border-b border-zinc-800 text-[10px] font-mono">
+    <div className="flex items-center gap-3 px-4 py-1.5 border-b border-[#27272a] text-[10px] font-mono bg-[#161618]">
       {counts.added > 0 && (
-        <span className="text-emerald-400">+{counts.added} added</span>
+        <span className="text-[#10b981]">+{counts.added} added</span>
       )}
       {counts.removed > 0 && (
-        <span className="text-red-400">-{counts.removed} removed</span>
+        <span className="text-[#ef4444]">-{counts.removed} removed</span>
       )}
       {counts.changed > 0 && (
-        <span className="text-amber-400">~{counts.changed} changed</span>
+        <span className="text-[#f59e0b]">~{counts.changed} changed</span>
       )}
-      <span className="text-zinc-600">{counts.unchanged} unchanged</span>
+      <span className="text-[#71717a]">{counts.unchanged} unchanged</span>
     </div>
   );
 }
@@ -137,7 +137,7 @@ function DiffSummary({
 /* -- Diff Line -------------------------------------------- */
 
 function DiffLine({ entry }: { entry: DiffEntry }) {
-  const indent = entry.depth * 16;
+  const indent = entry.depth * 14;
 
   const bgClass = BG_CLASSES[entry.type];
   const borderClass = BORDER_CLASSES[entry.type];
@@ -148,13 +148,11 @@ function DiffLine({ entry }: { entry: DiffEntry }) {
     <div
       className={`flex items-start gap-2 px-4 py-0.5 ${bgClass} border-l-2 ${borderClass}`}
     >
-      {/* Change indicator */}
       <span className={`shrink-0 w-3 text-center ${iconColor}`}>{iconChar}</span>
 
-      {/* Content */}
       <div style={{ paddingLeft: indent }}>
-        <span className="text-zinc-400">{entry.key}</span>
-        <span className="text-zinc-600">: </span>
+        <span className="text-[#9ca3af]">{entry.key}</span>
+        <span className="text-[#71717a]">: </span>
         <DiffValue entry={entry} />
       </div>
     </div>
@@ -166,20 +164,20 @@ function DiffLine({ entry }: { entry: DiffEntry }) {
 function DiffValue({ entry }: { entry: DiffEntry }) {
   switch (entry.type) {
     case 'unchanged':
-      return <FormattedValue value={entry.oldValue} className="text-zinc-500" />;
+      return <FormattedValue value={entry.oldValue} className="text-[#71717a]" />;
 
     case 'added':
-      return <FormattedValue value={entry.newValue} className="text-emerald-400" />;
+      return <FormattedValue value={entry.newValue} className="text-[#10b981]" />;
 
     case 'removed':
-      return <FormattedValue value={entry.oldValue} className="text-red-400 line-through" />;
+      return <FormattedValue value={entry.oldValue} className="text-[#ef4444] line-through" />;
 
     case 'changed':
       return (
         <span className="inline-flex items-center gap-1.5">
-          <FormattedValue value={entry.oldValue} className="text-red-400 line-through" />
-          <span className="text-zinc-600">{'\u2192'}</span>
-          <FormattedValue value={entry.newValue} className="text-emerald-400" />
+          <FormattedValue value={entry.oldValue} className="text-[#ef4444] line-through" />
+          <span className="text-[#71717a]">{'\u2192'}</span>
+          <FormattedValue value={entry.newValue} className="text-[#10b981]" />
         </span>
       );
   }
@@ -209,19 +207,17 @@ function FormattedValue({
   return <span className={className}>{String(value)}</span>;
 }
 
-/* -- Style Constants -------------------------------------- */
-
 const BG_CLASSES: Record<DiffEntryType, string> = {
-  added: 'bg-emerald-500/5',
-  removed: 'bg-red-500/5',
-  changed: 'bg-amber-500/5',
+  added: 'bg-[#10b981]/5',
+  removed: 'bg-[#ef4444]/5',
+  changed: 'bg-[#f59e0b]/5',
   unchanged: '',
 };
 
 const BORDER_CLASSES: Record<DiffEntryType, string> = {
-  added: 'border-emerald-500/40',
-  removed: 'border-red-500/40',
-  changed: 'border-amber-500/40',
+  added: 'border-[#10b981]',
+  removed: 'border-[#ef4444]',
+  changed: 'border-[#f59e0b]',
   unchanged: 'border-transparent',
 };
 
@@ -233,8 +229,8 @@ const ICON_CHARS: Record<DiffEntryType, string> = {
 };
 
 const ICON_COLORS: Record<DiffEntryType, string> = {
-  added: 'text-emerald-400',
-  removed: 'text-red-400',
-  changed: 'text-amber-400',
-  unchanged: 'text-zinc-700',
+  added: 'text-[#10b981]',
+  removed: 'text-[#ef4444]',
+  changed: 'text-[#f59e0b]',
+  unchanged: 'text-[#71717a]',
 };
