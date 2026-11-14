@@ -184,3 +184,10 @@ Copy the full command (with your project ID and token pre-filled) directly from 
 ├── proxy.ts          # Route protection middleware (Auth.js)
 └── scripts/          # Database migration tools
 ```
+
+---
+
+## License
+
+Distributed under the [MIT License](LICENSE). See `LICENSE` for more information.
+

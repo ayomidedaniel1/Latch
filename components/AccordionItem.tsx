@@ -58,23 +58,38 @@ export function AccordionItem({ question, children, index, defaultOpen = false }
   }
 
   return (
-    <div className="rounded-lg border border-[#27272a] bg-[#131315]/80 overflow-hidden transition-all duration-200 hover:border-[#3f3f46]">
+    <div className={`rounded-xl border transition-all duration-200 overflow-hidden ${
+      open
+        ? 'border-[#10b981]/40 bg-[#101115]/95 shadow-md shadow-[#10b981]/5'
+        : 'border-white/[0.08] bg-[#0c0d10]/80 hover:border-white/[0.16] hover:bg-[#121317]/80'
+    }`}>
       <button
         type="button"
         onClick={handleToggle}
-        className="w-full px-5 py-3.5 text-left flex items-center justify-between gap-4 cursor-pointer select-none transition-colors hover:bg-[#1c1b1d]/60"
+        className="w-full px-5 py-4 text-left flex items-center justify-between gap-4 cursor-pointer select-none transition-colors group"
         aria-expanded={open}
       >
-        <span className="text-sm md:text-base font-semibold text-[#10b981] tracking-tight">
+        <span className="text-sm sm:text-base font-semibold text-white group-hover:text-[#10b981] transition-colors tracking-tight">
           {question}
         </span>
-        <div className="h-6 w-6 rounded-full bg-[#1c1b1d] border border-[#27272a] flex items-center justify-center text-[#71717a] shrink-0 text-xs font-mono">
-          {open ? '−' : '+'}
+        <div className={`h-6 w-6 rounded-full border flex items-center justify-center shrink-0 transition-all ${
+          open
+            ? 'bg-[#10b981]/15 border-[#10b981]/30 text-[#10b981]'
+            : 'bg-white/[0.04] border-white/[0.08] text-zinc-400 group-hover:text-white'
+        }`}>
+          <svg
+            className={`w-3.5 h-3.5 transition-transform duration-200 ${open ? 'rotate-180' : ''}`}
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+          >
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+          </svg>
         </div>
       </button>
       <div className="accordion-content" data-open={open}>
         <div className="accordion-inner">
-          <div className="px-5 pb-4 pt-1 text-xs md:text-sm text-[#9ca3af] leading-relaxed border-t border-[#27272a]/40">
+          <div className="px-5 pb-5 pt-1 text-xs sm:text-sm text-zinc-400 leading-relaxed border-t border-white/[0.04]">
             {children}
           </div>
         </div>
